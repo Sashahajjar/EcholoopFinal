@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EchoLoop Feed</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="feed-navbar">
+    <div class="feed-logo">
+      <img src="images/logoecho.png" alt="EchoLoop Logo" class="feed-logo-img">
+    </div>
+    <div class="feed-nav-links">
+      <a href="suggestions.html">Suggestions</a>
+      <a href="create_post.html">Create Post</a>
+      <a href="opportunities.html">Opportunities</a>
+      <a href="#" onclick="goToAccount()">Account</a>
+    </div>
+  </nav>
+
+  <!-- Search Bar Section -->
+  <div class="feed-search-bar-wrapper">
+    <input type="text" placeholder="Search" class="feed-search-bar" />
+  </div>
+
+  <!-- Feed Container -->
+  <main class="feed-container" id="feed">
+    <!-- Posts will be injected here -->
+  </main>
+
+  <script src="script.js" defer></script>
+
+  <script>
+    function goToAccount() {
+      const user = JSON.parse(localStorage.getItem("echoloopUser"));
+      if (!user) {
+        alert("You're not logged in.");
+        window.location.href = "index.html";
+      } else if (user.role === "DJ") {
+        window.location.href = "account_dj.html";
+      } else if (user.role === "Planner") {
+        window.location.href = "account_planner.html";
+      } else {
+        alert("Unknown user role.");
+      }
+    }
+  </script>
+</body>
+</html>

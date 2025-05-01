@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Opportunities - EchoLoop</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- Shared Navbar -->
+  <nav class="feed-navbar">
+    <a href="feed.html" class="feed-logo">
+      <img src="images/logoecho.png" alt="EchoLoop Logo" class="feed-logo-img" />
+    </a>
+    <div class="feed-nav-links">
+      <a href="suggestions.html">Suggestions</a>
+      <a href="create_post.html">Create Post</a>
+      <a href="opportunities.html" class="active">Opportunities</a>
+      <a href="#" onclick="goToAccount()">Account</a>
+    </div>
+  </nav>
+
+  <!-- Search Bar Section -->
+  <div class="feed-search-bar-wrapper">
+    <input type="text" placeholder="Search" class="feed-search-bar" />
+  </div>
+
+  <!-- Opportunities Grid -->
+  <main class="feed-opportunities-container">
+    <div class="feed-opportunity-card">
+      <h3>City Lights Party</h3>
+      <p>New York, NY<br>Looking for a DJ<br>May 22, 2024</p>
+      <button class="feed-button-dark">View</button>
+    </div>
+    <div class="feed-opportunity-card">
+      <h3>Electric Wave Festival</h3>
+      <p>Miami, FL<br>Looking for a DJ<br>June 15, 2024</p>
+      <button class="feed-button-dark">View</button>
+    </div>
+    <div class="feed-opportunity-card">
+      <h3>Vibrant Rhythms Event</h3>
+      <p>Austin, TX<br>Looking for a DJ<br>July 3, 2024</p>
+      <button class="feed-button-dark">View</button>
+    </div>
+    <div class="feed-opportunity-card">
+      <h3>Neon Pulse Club Night</h3>
+      <p>Las Vegas, NV<br>Looking for a DJ<br>August 10, 2024</p>
+      <button class="feed-button-dark">View</button>
+    </div>
+  </main>
+  <script type="text/javascript"> 
+  function goToAccount() {
+	  const user = JSON.parse(localStorage.getItem("echoloopUser"));
+	  if (!user) {
+	    alert("You're not logged in.");
+	    window.location.href = "index.html";
+	  } else if (user.role === "DJ") {
+	    window.location.href = "account_dj.html";
+	  } else if (user.role === "Planner") {
+	    window.location.href = "account_planner.html";
+	  }
+	}
+</script>
+</body>
+</html>

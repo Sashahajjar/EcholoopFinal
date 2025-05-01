@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DJ Profile - EchoLoop</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="feed-navbar">
+    <a href="feed.html" class="feed-logo">
+      <img src="images/logoecho.png" alt="EchoLoop Logo" class="feed-logo-img" />
+    </a>
+    <div class="feed-nav-links">
+      <a href="feed.html">Feed</a>
+      <a href="suggestions.html">Suggestions</a>
+      <a href="opportunities.html">Opportunities</a>
+      <a href="account_dj.html" class="active">Account</a>
+    </div>
+  </nav>
+
+  <!-- DJ Profile -->
+  <main class="feed-account-container">
+    <div class="feed-profile-card">
+      <img src="images/dj-profile.jpg" alt="DJ" class="feed-profile-img" />
+      <div class="feed-profile-details">
+        <div class="feed-profile-header">
+          <div>
+            <h2 id="usernameDisplay">Loading...</h2>
+            <p id="roleDisplay">Loading role...</p>
+          </div>
+          <button class="feed-button" onclick="logout()">Log out</button>
+        </div>
+
+        <div class="feed-profile-section">
+          <h4>Upcoming Events</h4>
+          <p id="eventsList">Loading...</p>
+        </div>
+
+        <div class="feed-profile-section">
+          <h4>Locations</h4>
+          <p id="locationsText">Loading...</p>
+        </div>
+
+        <div class="feed-profile-section">
+          <h4>Genres Preferred</h4>
+          <p id="genresText">Loading...</p>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const user = JSON.parse(localStorage.getItem("echoloopUser"));
+
+    if (!user) {
+      window.location.href = "index.html";
+    } else {
+      document.getElementById("usernameDisplay").textContent = user.username;
+      document.getElementById("roleDisplay").textContent = user.role;
+      document.getElementById("eventsList").textContent = user.events || "No events listed.";
+      document.getElementById("locationsText").textContent = user.locations || "No locations listed.";
+      document.getElementById("genresText").textContent = user.genres || "No genres listed.";
+    }
+
+    function logout() {
+      localStorage.removeItem("echoloopUser");
+      window.location.href = "index.html";
+    }
+  </script>
+</body>
+</html>

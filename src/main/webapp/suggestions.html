@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Suggestions - EchoLoop</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- Shared Navbar -->
+  <nav class="feed-navbar">
+	 <a href="feed.html" class="feed-logo">
+	  <img src="images/logoecho.png" alt="EchoLoop Logo" class="feed-logo-img" />
+	</a>
+ 
+    <div class="feed-nav-links">
+      <a href="suggestions.html" class="active">Suggestions</a>
+      <a href="create_post.html">Create Post</a>
+      <a href="opportunities.html">Opportunities</a>
+      <a href="#" onclick="goToAccount()">Account</a>
+
+    </div>
+  </nav>
+
+  <!-- Search Bar Section -->
+  <div class="feed-search-bar-wrapper">
+    <input type="text" placeholder="Search" class="feed-search-bar" />
+  </div>
+
+  <!-- Suggestions Content -->
+  <main class="feed-suggestions">
+    <div class="feed-suggestions-wrapper">
+      <!-- DJs -->
+      <section class="feed-suggestions-box">
+        <h3>Recommended DJs</h3>
+        <div class="feed-dj-card">
+          <img src="images/dj1.jpg" alt="DJ Pulse" class="feed-dj-avatar" />
+          <div>
+            <h4>DJ Pulse</h4>
+            <p>house, techno</p>
+            <button class="feed-button">View Profile</button>
+          </div>
+        </div>
+        <div class="feed-dj-card">
+          <img src="images/dj2.jpg" alt="DJ Harmony" class="feed-dj-avatar" />
+          <div>
+            <h4>DJ Harmony</h4>
+            <p>soulful house, dance</p>
+            <button class="feed-button">View Profile</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Events -->
+      <section class="feed-suggestions-box">
+        <h3>Recommended Events</h3>
+        <div class="feed-event-row">
+          <div class="feed-event-card">
+            <img src="images/event1.jpg" alt="Event" />
+            <h4>Spectrum Party</h4>
+            <p>May 20<br>Los Angeles</p>
+            <button class="feed-button">View Event</button>
+          </div>
+          <div class="feed-event-card">
+            <img src="images/event2.jpg" alt="Event" />
+            <h4>Rhythm Fest</h4>
+            <p>June 5<br>Miami</p>
+            <button class="feed-button">View Event</button>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+    <script type="text/javascript"> 
+  function goToAccount() {
+	  const user = JSON.parse(localStorage.getItem("echoloopUser"));
+	  if (!user) {
+	    alert("You're not logged in.");
+	    window.location.href = "index.html";
+	  } else if (user.role === "DJ") {
+	    window.location.href = "account_dj.html";
+	  } else if (user.role === "Planner") {
+	    window.location.href = "account_planner.html";
+	  }
+	}
+</script>
+</body>
+</html>

@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EchoLoop - Home</title>
+  <style>
+    body {
+      background-color: #221437;
+      color: #f9eccc;
+      font-family: 'Josefin Sans', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      text-align: center;
+      padding: 0 20px;
+    }
+
+    .feed-landing-logo {
+      height: 500px;
+      width: auto;
+      margin-bottom: 40px;
+    }
+
+    h2 {
+      font-size: 2em;
+      font-weight: 400;
+      margin-bottom: 30px;
+    }
+
+    .feed-auth-buttons {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .feed-button-purple,
+    .feed-button-yellow {
+      padding: 12px 24px;
+      font-size: 1em;
+      font-weight: bold;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: 0.2s ease-in-out;
+    }
+
+    .feed-button-purple {
+      background-color: #9b57f2;
+      color: white;
+    }
+
+    .feed-button-purple:hover {
+      background-color: #803bd7;
+    }
+
+    .feed-button-yellow {
+      background-color: #f9eccc;
+      color: #2b2538;
+    }
+
+    .feed-button-yellow:hover {
+      background-color: #e7daaa;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.6);
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-content {
+      background-color: #fff;
+      color: #222;
+      padding: 30px;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 450px;
+      position: relative;
+    }
+
+    .modal-content h3 {
+      margin-bottom: 20px;
+      font-size: 1.5em;
+    }
+
+    .modal-content input,
+    .modal-content select,
+    .modal-content textarea {
+      width: 100%;
+      padding: 10px;
+      margin: 8px 0;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-family: inherit;
+    }
+
+    .modal-content button {
+      margin-top: 12px;
+      width: 100%;
+      background-color: #9b57f2;
+      color: white;
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .close {
+      position: absolute;
+      top: 12px;
+      right: 16px;
+      font-size: 1.5em;
+      color: #888;
+      cursor: pointer;
+    }
+
+    .close:hover {
+      color: #222;
+    }
+  </style>
+</head>
+<body>
+
+  <img src="images/indexlogoecho.png" alt="EchoLoop Logo" class="feed-landing-logo" />
+  <h2>Connecting DJs and events</h2>
+
+  <div class="feed-auth-buttons">
+    <button class="feed-button-purple" onclick="openModal('loginModal')">Log in</button>
+    <button class="feed-button-yellow" onclick="openModal('signupModal')">Sign up</button>
+  </div>
+
+  <!-- Login Modal -->
+  <div id="loginModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal('loginModal')">&times;</span>
+      <h3>Log In</h3>
+      <input type="text" id="loginUsername" placeholder="Username" />
+      <input type="password" id="loginPassword" placeholder="Password" />
+      <button onclick="login()">Log in</button>
+    </div>
+  </div>
+
+  <!-- Signup Modal -->
+  <div id="signupModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal('signupModal')">&times;</span>
+      <h3>Sign Up</h3>
+      <input type="text" id="signupUsername" placeholder="Username" />
+      <input type="password" id="signupPassword" placeholder="Password" />
+      <select id="signupRole">
+        <option value="DJ">DJ</option>
+        <option value="Planner">Event Planner</option>
+      </select>
+      <textarea id="signupEvents" placeholder="Upcoming Events (one per line)" rows="3"></textarea>
+      <textarea id="signupLocations" placeholder="Locations (e.g. Paris, Miami)" rows="2"></textarea>
+      <textarea id="signupGenres" placeholder="Genres Preferred (e.g. House, Techno)" rows="2"></textarea>
+      <button onclick="signup()">Sign up</button>
+    </div>
+  </div>
+
+  <script>
+    function openModal(id) {
+      document.getElementById(id).style.display = "flex";
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).style.display = "none";
+    }
+
+    function login() {
+      const username = document.getElementById("loginUsername").value;
+      const password = document.getElementById("loginPassword").value;
+
+      fetch("http://localhost:8080/api/users/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password })
+      })
+      .then(response => {
+        if (!response.ok) throw new Error("Invalid credentials");
+        return response.json();
+      })
+      .then(user => {
+        localStorage.setItem("echoloopUser", JSON.stringify(user));
+        closeModal('loginModal');
+        window.location.href = "feed.html";
+      })
+      .catch(err => alert("Login failed: " + err.message));
+    }
+
+    function signup() {
+      const username = document.getElementById("signupUsername").value;
+      const password = document.getElementById("signupPassword").value;
+      const role = document.getElementById("signupRole").value;
+      const events = document.getElementById("signupEvents").value;
+      const locations = document.getElementById("signupLocations").value;
+      const genres = document.getElementById("signupGenres").value;
+
+      fetch("http://localhost:8080/api/users/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password, role, events, locations, genres })
+      })
+      .then(response => {
+        if (!response.ok) throw new Error("Signup failed");
+        alert("Signup successful. You can now log in.");
+        closeModal('signupModal');
+      })
+      .catch(err => alert(err.message));
+    }
+  </script>
+
+</body>
+</html>

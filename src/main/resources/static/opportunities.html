@@ -54,12 +54,18 @@
 	  if (!user) {
 	    alert("You're not logged in.");
 	    window.location.href = "index.html";
-	  } else if (user.role === "DJ") {
-	    window.location.href = "account_dj.html";
-	  } else if (user.role === "Planner") {
-	    window.location.href = "account_planner.html";
+	  } else {
+	    const role = user.role?.toLowerCase();
+	    if (role === "dj") {
+	      window.location.href = "account_dj.html";
+	    } else if (role === "event community") {
+	      window.location.href = "account_community.html";
+	    } else {
+	      alert("Unknown user role: " + user.role);
+	    }
 	  }
 	}
+
 </script>
 </body>
 </html>

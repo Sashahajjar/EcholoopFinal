@@ -160,7 +160,7 @@
       <input type="password" id="signupPassword" placeholder="Password" />
       <select id="signupRole">
         <option value="DJ">DJ</option>
-        <option value="Planner">Event Planner</option>
+  		<option value="Event Community">Event Community</option>
       </select>
       <textarea id="signupEvents" placeholder="Upcoming Events (one per line)" rows="3"></textarea>
       <textarea id="signupLocations" placeholder="Locations (e.g. Paris, Miami)" rows="2"></textarea>
@@ -179,25 +179,26 @@
     }
 
     function login() {
-      const username = document.getElementById("loginUsername").value;
-      const password = document.getElementById("loginPassword").value;
+    	  const username = document.getElementById("loginUsername").value;
+    	  const password = document.getElementById("loginPassword").value;
 
-      fetch("http://localhost:8080/api/users/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password })
-      })
-      .then(response => {
-        if (!response.ok) throw new Error("Invalid credentials");
-        return response.json();
-      })
-      .then(user => {
-        localStorage.setItem("echoloopUser", JSON.stringify(user));
-        closeModal('loginModal');
-        window.location.href = "feed.html";
-      })
-      .catch(err => alert("Login failed: " + err.message));
-    }
+    	  fetch("http://localhost:8080/api/users/login", {
+    	    method: "POST",
+    	    headers: { "Content-Type": "application/json" },
+    	    body: JSON.stringify({ username, password })
+    	  })
+    	  .then(response => {
+    	    if (!response.ok) throw new Error("Invalid credentials");
+    	    return response.json();
+    	  })
+    	  .then(user => {
+    	    localStorage.setItem("echoloopUser", JSON.stringify(user));
+    	    closeModal('loginModal');
+    	    window.location.href = "feed.html"; // always go to feed after login
+    	  })
+    	  .catch(err => alert("Login failed: " + err.message));
+    	}
+
 
     function signup() {
       const username = document.getElementById("signupUsername").value;

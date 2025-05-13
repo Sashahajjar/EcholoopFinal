@@ -77,9 +77,9 @@ function login() {
       closeModal('loginModal');
       if (user.role === "DJ") {
         window.location.href = "account_dj.html";
-      } else if (user.role === "Planner") {
-        window.location.href = "account_planner.html";
-      }
+		} else if (user.role === "Event Community") {
+		  window.location.href = "account_community.html";
+		}
     })
     .catch(err => alert("Login failed: " + err.message));
 }

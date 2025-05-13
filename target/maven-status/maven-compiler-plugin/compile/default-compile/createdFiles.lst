@@ -1,4 +1,4 @@
-com/echoloop/repository/UserRepository.class
 com/echoloop/EchoLoopApplication.class
-com/echoloop/controller/UserController.class
 com/echoloop/model/User.class
+com/echoloop/repository/UserRepository.class
+com/echoloop/controller/UserController.class

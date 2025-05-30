@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EchoLoop - My Applications</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="script.js" defer></script>
+  <style>/* Page Container */
+    .feed-container {
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 0 20px;
+      background: var(--bg-primary);
+    }
+    
+    .feed-container h2 {
+      font-size: 1.6em;
+      margin-bottom: 24px;
+      color: var(--accent-primary);
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+    
+    /* Applications List */
+    #applicationStatus {
+      background: var(--surface);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border);
+    }
+    
+    .application-entry {
+      font-size: 1em;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text-primary);
+      transition: background-color 0.2s ease;
+    }
+    
+    .application-entry:hover {
+      background-color: rgba(124, 92, 255, 0.04);
+    }
+    
+    .application-entry:last-child {
+      border-bottom: none;
+    }
+    
+    /* Search Bar already styled by shared rules */
+    </style>
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="feed-navbar">
+    <a href="feed.html" class="feed-logo">
+      <img src="images/logoecho.png" alt="EchoLoop Logo" class="feed-logo-img">
+    </a>
+    <div class="feed-nav-links">
+      <a href="suggestions.html">Suggestions</a>
+      <a href="create_post.html">Create Post</a>
+      <a href="opportunities.html">Opportunities</a>
+      <a id="createEventLink" href="create_event.html" style="display: none;">Create Event</a>
+      <a href="my_applications.html" class="active">My Applications</a>
+      <a href="#" onclick="goToAccount()">Account</a>
+    </div>
+  </nav>
+
+  <!-- Search Bar -->
+  <div class="feed-search-bar-wrapper">
+    <input
+      type="text"
+      id="searchInput"
+      placeholder="Search your applications…"
+      class="feed-search-bar"
+      onkeyup="filterApplications()" />
+  </div>
+
+  <!-- Applications Section -->
+  <main class="feed-container">
+    <h2>My Applications</h2>
+    <div id="applicationStatus">Loading...</div>
+  </main>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      // Using loggedInUser from script.js
+      const isDJ = loggedInUser?.role?.toLowerCase() === "dj";
+
+      if (!loggedInUser || !isDJ) {
+        alert("Only DJs can access this page.");
+        window.location.href = "index.html";
+        return;
+      }
+
+      fetch(`/api/users/${loggedInUser.id}/my-applications`)
+        .then(res => res.json())
+        .then(data => {
+          const container = document.getElementById("applicationStatus");
+          container.innerHTML = "";
+
+          if (!data.length) {
+            container.textContent = "You haven't applied to any events yet.";
+            return;
+          }
+
+          data.forEach(entry => {
+            const p = document.createElement("p");
+            p.className = "application-entry"; // Needed for filtering
+            p.textContent = `${entry.eventTitle}: ${entry.status}`;
+            container.appendChild(p);
+          });
+        })
+        .catch(err => {
+          document.getElementById("applicationStatus").textContent = "Failed to load applications.";
+          console.error(err);
+        });
+    });
+
+    function filterApplications() {
+      const input = document.getElementById("searchInput").value.toLowerCase();
+      const entries = document.querySelectorAll(".application-entry");
+
+      entries.forEach(entry => {
+        const match = entry.textContent.toLowerCase().includes(input);
+        entry.style.display = match ? "" : "none";
+      });
+    }
+  </script>
+</body>
+</html>

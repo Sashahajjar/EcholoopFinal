@@ -2,54 +2,192 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>EchoLoop Feed</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Feed - EchoLoop</title>
+  <link rel="stylesheet" href="style.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="script.js" defer></script>
 </head>
 <body>
-  <!-- Navbar -->
   <nav class="feed-navbar">
-    <div class="feed-logo">
-      <img src="images/logoecho.png" alt="EchoLoop Logo" class="feed-logo-img">
-    </div>
-    <div class="feed-nav-links">
-      <a href="suggestions.html">Suggestions</a>
-      <a href="create_post.html">Create Post</a>
-      <a href="opportunities.html">Opportunities</a>
-      <a href="#" onclick="goToAccount()">Account</a>
-    </div>
+    <a href="feed.html" class="feed-logo">
+      <img src="images/logoecho.png" alt="EchoLoop" class="feed-logo-img"/>
+    </a>
+    <div class="feed-nav-links"></div>
   </nav>
 
-  <!-- Search Bar Section -->
   <div class="feed-search-bar-wrapper">
-    <input type="text" placeholder="Search" class="feed-search-bar" />
+    <input 
+      type="text" 
+      id="searchInput" 
+      placeholder="Search for users, events, or posts..." 
+      class="feed-search-bar" 
+      onkeypress="handleSearchKey(event)"
+    >
   </div>
-
-  <!-- Feed Container -->
-  <main class="feed-container" id="feed">
-    <!-- Posts will be injected here -->
+  
+  <div id="searchResults" class="search-results-container"></div>
+  <main class="feed-posts" id="feed">
+    <div class="feed-post loading">
+      <div class="feed-post-header">
+        <div class="feed-avatar"></div>
+        <div class="feed-post-content">
+          <h4>&nbsp;</h4>
+          <small>&nbsp;</small>
+          <p>&nbsp;</p>
+        </div>
+      </div>
+    </div>
   </main>
 
-  <script src="script.js" defer></script>
-
   <script>
-  function goToAccount() {
-	  const user = JSON.parse(localStorage.getItem("echoloopUser"));
-	  if (!user) {
-	    alert("You're not logged in.");
-	    window.location.href = "index.html";
-	  } else {
-	    const role = user.role?.toLowerCase(); // Normalize case
-	    if (role === "dj") {
-	      window.location.href = "account_dj.html";
-	    } else if (role === "event community") {
-	      window.location.href = "account_community.html";
-	    } else {
-	      alert("Unknown user role: " + user.role);
-	    }
-	  }
-	}
+    document.addEventListener("DOMContentLoaded", () => {
+      if (!loggedInUser) {
+        window.location.href = "index.html";
+        return;
+      }
 
+      updateNavigationBar();
+
+      fetch(`/api/posts/following/${loggedInUser.id}`)
+        .then(res => res.json())
+        .then(posts => {
+          const container = document.getElementById("feed");
+          container.innerHTML = "";
+
+          if (!posts.length) {
+            container.innerHTML = `
+              <div class="feed-empty-state">
+                <p>No posts yet. Follow some users to see their posts!</p>
+              </div>
+            `;
+            return;
+          }
+
+          posts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+          posts.forEach(post => {
+            const div = document.createElement("div");
+            div.className = "feed-post";
+
+            const initials = post.username ? post.username[0].toUpperCase() : "?";
+            const imageHTML = post.imageUrl
+              ? `<img src="${post.imageUrl}" alt="Post image" class="feed-post-image" loading="lazy" />`
+              : "";
+            const timestamp = new Date(post.createdAt).toLocaleString('en-US', {
+              weekday: 'short',
+              month: 'short',
+              day: 'numeric',
+              hour: 'numeric',
+              minute: '2-digit',
+              hour12: true
+            });
+
+            const commentsHTML = post.recentComments && post.recentComments.length > 0
+              ? `<div class="feed-comments">
+                   ${post.recentComments.map(c => `
+                     <div class="feed-comment">
+                       <strong>${c.username}</strong>: ${c.content}
+                     </div>
+                   `).join("")}
+                 </div>`
+              : `<div class="feed-comments"><em>No comments yet</em></div>`;
+
+            div.innerHTML = `
+              <div class="feed-post-header">
+                <div class="feed-avatar">${initials}</div>
+                <div class="feed-post-content">
+                  <h4>${post.username} <small>${timestamp}</small></h4>
+                  <p>${post.content}</p>
+                  ${imageHTML}
+                  <div class="post-actions">
+                    <button onclick="likePost(${post.id}, this)" class="feed-button">Like</button>
+                  </div>
+                  <div class="comment-section">
+                    ${(post.comments || []).map(c => `
+                      <div class="comment">
+                        <strong>${c.username}</strong>: ${c.content}
+                      </div>
+                    `).join('')}
+                    <input type="text" class="comment-input" placeholder="Write a comment..." onkeydown="handleCommentKey(event, ${post.id})" />
+                  </div>
+
+                  ${commentsHTML}
+                </div>
+              </div>
+            `;
+
+            container.appendChild(div);
+          });
+        })
+        .catch(err => {
+          console.error("Feed error:", err);
+          document.getElementById("feed").innerHTML = `
+            <div class="feed-error-state">
+              <p>Failed to load feed. Please try again later.</p>
+            </div>
+          `;
+        });
+    });
+
+    function likePost(postId, button) {
+      fetch(`/api/social/posts/${postId}/like?userId=${loggedInUser.id}`, {
+        method: 'POST'
+      })
+        .then(res => res.json())
+        .then(data => {
+          button.textContent = `Like (${data.count})`;
+          if (data.liked) {
+            button.classList.add("applied");
+          } else {
+            button.classList.remove("applied");
+          }
+        })
+        .catch(err => {
+          console.error("Like error:", err);
+          alert("Could not like post.");
+        });
+    }
+
+    function commentOnPost(postId) {
+      const content = prompt("Enter your comment:");
+      if (!content) return;
+
+      fetch(`/api/social/posts/${postId}/comments?userId=${loggedInUser.id}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content })
+      })
+        .then(res => res.json())
+        .then(comment => {
+          alert("Comment added!");
+          location.reload(); // Optional: to show updated comment count
+        })
+        .catch(err => {
+          console.error("Comment error:", err);
+          alert("Could not post comment.");
+        });
+    }
+    function handleCommentKey(event, postId) {
+  if (event.key === "Enter") {
+    const input = event.target;
+    const comment = input.value.trim();
+    if (!comment) return;
+
+    fetch(`/api/social/comment/${postId}/${loggedInUser.id}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content: comment })
+    })
+      .then(res => res.ok ? res.json() : Promise.reject())
+      .then(newComment => {
+        const commentHTML = `<div class="comment"><strong>${newComment.username}</strong>: ${newComment.content}</div>`;
+        input.insertAdjacentHTML('beforebegin', commentHTML);
+        input.value = '';
+      })
+      .catch(() => alert("Could not post comment."));
+  }
+}
   </script>
 </body>
 </html>

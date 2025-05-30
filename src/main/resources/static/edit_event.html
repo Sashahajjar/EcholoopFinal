@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Edit Event - EchoLoop</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="script.js" defer></script>
+  <style>
+    .edit-event-form {
+      max-width: 800px;
+      margin: 20px auto;
+      padding: 30px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+
+    .form-group input,
+    .form-group textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 16px;
+    }
+
+    .form-group textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+
+    .button-group {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      margin-top: 20px;
+    }
+
+    .feed-button-dark {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 500;
+      background-color: #1a1625;
+      color: white;
+    }
+
+    .feed-button-dark:hover {
+      background-color: #2c253d;
+    }
+
+    .feed-button-cancel {
+      padding: 10px 20px;
+      border: 1px solid #1a1625;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 500;
+      background-color: white;
+      color: #1a1625;
+    }
+
+    .feed-button-cancel:hover {
+      background-color: #f5f5f5;
+    }
+  </style>
+</head>
+<body>
+  <nav class="feed-navbar">
+    <a href="feed.html" class="feed-logo">
+      <img src="images/logoecho.png" alt="EchoLoop Logo" class="feed-logo-img" />
+    </a>
+    <div class="feed-nav-links">
+      <!-- Navigation will be populated by JavaScript -->
+    </div>
+  </nav>
+
+  <main>
+    <form id="editEventForm" class="edit-event-form">
+      <h2>Edit Event</h2>
+      
+      <div class="form-group">
+        <label for="eventTitle">Event Title</label>
+        <input type="text" id="eventTitle" name="title" required>
+      </div>
+
+      <div class="form-group">
+        <label for="eventLocation">Location</label>
+        <input type="text" id="eventLocation" name="location" required>
+      </div>
+
+      <div class="form-group">
+        <label for="eventGenre">Genre</label>
+        <input type="text" id="eventGenre" name="genre" required>
+      </div>
+
+      <div class="form-group">
+        <label for="eventDate">Event Date</label>
+        <input type="date" id="eventDate" name="eventDate" required>
+      </div>
+
+      <div class="form-group">
+        <label for="eventDescription">Description</label>
+        <textarea id="eventDescription" name="description" required></textarea>
+      </div>
+
+      <div class="button-group">
+        <button type="button" class="feed-button-cancel" onclick="window.history.back()">Cancel</button>
+        <button type="submit" class="feed-button-dark">Save Changes</button>
+      </div>
+    </form>
+  </main>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", async function() {
+      updateNavigationBar();
+      
+      const user = JSON.parse(localStorage.getItem("echoloopUser"));
+      if (!user || user.role.toLowerCase() !== "event community") {
+        alert("Only event communities can edit events");
+        window.location.href = "index.html";
+        return;
+      }
+
+      const params = new URLSearchParams(window.location.search);
+      const eventId = params.get("id");
+      if (!eventId) {
+        alert("Missing event ID");
+        window.history.back();
+        return;
+      }
+
+      // Fetch current event details
+      try {
+        const response = await fetch(`/api/events/${eventId}`);
+        if (!response.ok) throw new Error("Failed to fetch event");
+        const event = await response.json();
+
+        // Populate form with current values
+        document.getElementById("eventTitle").value = event.title;
+        document.getElementById("eventLocation").value = event.location;
+        document.getElementById("eventGenre").value = event.genre;
+        document.getElementById("eventDate").value = event.eventDate;
+        document.getElementById("eventDescription").value = event.description;
+      } catch (error) {
+        console.error("Error fetching event:", error);
+        alert("Failed to load event details");
+        window.history.back();
+      }
+
+      // Handle form submission
+      document.getElementById("editEventForm").addEventListener("submit", async function(e) {
+        e.preventDefault();
+
+        const updatedEvent = {
+          title: document.getElementById("eventTitle").value,
+          location: document.getElementById("eventLocation").value,
+          genre: document.getElementById("eventGenre").value,
+          eventDate: document.getElementById("eventDate").value,
+          description: document.getElementById("eventDescription").value
+        };
+
+        try {
+          const response = await fetch(`/api/events/${eventId}`, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify(updatedEvent)
+          });
+
+          if (!response.ok) throw new Error("Failed to update event");
+          
+          alert("Event updated successfully!");
+          window.location.href = `event_detail.html?eventId=${eventId}`;
+        } catch (error) {
+          console.error("Error updating event:", error);
+          alert("Failed to update event. Please try again.");
+        }
+      });
+    });
+  </script>
+</body>
+</html> 

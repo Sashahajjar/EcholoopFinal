@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Post - EchoLoop</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav class="feed-navbar">
+        <a href="feed.html" class="feed-logo">
+            <img src="images/logoecho.png" alt="EchoLoop Logo" class="feed-logo-img">
+        </a>
+        <div class="feed-nav-links">
+            <!-- Navigation will be populated by JavaScript -->
+        </div>
+    </nav>
+
+    <main class="feed-container">
+        <div class="feed-post-form">
+            <h2>Edit Post</h2>
+            <form id="editPostForm">
+                <textarea id="postContent" class="feed-textarea" required></textarea>
+                <div class="feed-image-preview" id="currentImagePreview" style="display: none;">
+                    <img id="currentImage" src="" alt="Current post image">
+                </div>
+                <div class="feed-form-actions">
+                    <input type="file" id="newImage" accept="image/*" class="feed-file-input">
+                    <div class="feed-button-group">
+                        <button type="submit" class="feed-button">Save Changes</button>
+                        <button type="button" onclick="window.history.back()" class="feed-button">Cancel</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <script src="script.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const loggedInUser = JSON.parse(localStorage.getItem('echoloopUser'));
+            if (!loggedInUser) {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            const postId = new URLSearchParams(window.location.search).get('id');
+            if (!postId) {
+                alert('No post specified');
+                window.history.back();
+                return;
+            }
+
+            // Fetch the post data
+            fetch(`/api/posts/${postId}`)
+                .then(res => res.json())
+                .then(post => {
+                    if (post.userId !== loggedInUser.id) {
+                        alert('You can only edit your own posts');
+                        window.history.back();
+                        return;
+                    }
+
+                    document.getElementById('postContent').value = post.content;
+                    
+                    if (post.imageUrl) {
+                        document.getElementById('currentImagePreview').style.display = 'block';
+                        document.getElementById('currentImage').src = post.imageUrl;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Failed to load post');
+                    window.history.back();
+                });
+
+            // Handle form submission
+            document.getElementById('editPostForm').onsubmit = async function(e) {
+                e.preventDefault();
+
+                const formData = new FormData();
+                formData.append('content', document.getElementById('postContent').value);
+                formData.append('userId', loggedInUser.id);
+
+                const newImage = document.getElementById('newImage').files[0];
+                if (newImage) {
+                    formData.append('image', newImage);
+                }
+
+                try {
+                    const response = await fetch(`/api/posts/${postId}`, {
+                        method: 'PUT',
+                        body: formData
+                    });
+
+                    if (response.ok) {
+                        window.history.back();
+                    } else {
+                        throw new Error('Failed to update post');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('Failed to update post');
+                }
+            };
+        });
+    </script>
+</body>
+</html> 

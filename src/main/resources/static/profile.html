@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Profile - EchoLoop</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="script.js" defer></script>
+  <style>
+    :root {
+      --bg-primary: #f8f6ff;
+      --bg-secondary: #e8f3ff;
+      --accent-primary: #7c5cff;
+      --accent-secondary: #4a9eff;
+      --accent-tertiary: #5a6acf;
+      --text-primary: #2d3748;
+      --text-secondary: #718096;
+      --success: #48bb78;
+      --surface: #ffffff;
+      --border: rgba(226, 232, 240, 0.8);
+      --shadow-sm: 0 2px 12px rgba(124, 92, 255, 0.06);
+      --shadow-md: 0 4px 20px rgba(124, 92, 255, 0.08);
+    }
+  
+    body {
+      font-family: 'Inter', sans-serif;
+      color: var(--text-primary);
+    }
+  
+    .feed-account-container {
+      max-width: 1000px;
+      margin: 40px auto;
+      padding: 0 20px;
+    }
+  
+    .feed-profile-card {
+      background: var(--surface);
+      border-radius: 16px;
+      padding: 32px;
+      box-shadow: var(--shadow-md);
+      border: 1px solid var(--border);
+    }
+  
+    .feed-profile-img {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid var(--accent-secondary);
+      margin-bottom: 16px;
+    }
+  
+    .feed-button {
+      padding: 8px 16px;
+      background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+      border: none;
+      border-radius: 8px;
+      color: white;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background 0.2s;
+    }
+  
+    .feed-button:hover {
+      background: linear-gradient(135deg, var(--accent-secondary), var(--accent-primary));
+    }
+  
+    .feed-input,
+    .feed-textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin-top: 8px;
+      margin-bottom: 12px;
+    }
+  
+    .feed-profile-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+  
+    .feed-profile-section {
+      margin-bottom: 32px;
+    }
+  
+    .feed-profile-section h4 {
+      margin-bottom: 8px;
+      font-size: 1.1em;
+      color: var(--accent-primary);
+    }
+  
+    .feed-profile-section p {
+      font-size: 0.95em;
+      color: var(--text-secondary);
+    }
+  
+    .feed-profile-stats {
+      display: flex;
+      justify-content: space-around;
+      background-color: var(--surface);
+      padding: 16px;
+      border-radius: 12px;
+      margin-bottom: 32px;
+      border: 1px solid var(--border);
+    }
+  
+    .feed-stat h4 {
+      margin: 0;
+      font-size: 1em;
+      color: var(--accent-primary);
+    }
+  
+    .feed-stat p {
+      margin: 4px 0 0;
+      font-weight: 500;
+      color: var(--text-secondary);
+    }
+  
+    .feed-lists-section {
+      display: flex;
+      gap: 40px;
+      flex-wrap: wrap;
+    }
+  
+    .feed-following-list,
+    .feed-followers-list {
+      flex: 1;
+      min-width: 300px;
+    }
+  
+    ul {
+      padding-left: 20px;
+    }
+  
+    li {
+      margin-bottom: 8px;
+    }
+  
+    a {
+      text-decoration: none;
+      color: var(--accent-primary);
+    }
+  
+    a:hover {
+      text-decoration: underline;
+    }
+  
+    .feed-post,
+    .feed-event {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+      background-color: var(--surface);
+      box-shadow: var(--shadow-sm);
+    }
+  
+    .feed-post-actions {
+      margin-top: 10px;
+      display: flex;
+      gap: 8px;
+    }
+  
+    .feed-no-activity {
+      text-align: center;
+      color: var(--text-secondary);
+      font-style: italic;
+    }
+  
+    @media (max-width: 768px) {
+      .feed-profile-header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+  
+      .feed-profile-stats {
+        flex-direction: column;
+        align-items: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <nav class="feed-navbar">
+    <a href="feed.html">
+      <img src="images/logoecho.png" alt="EchoLoop Logo" class="feed-logo-img" />
+    </a>
+    <div class="feed-nav-links"></div>
+  </nav>
+
+  <main class="feed-account-container">
+    <div class="feed-profile-card">
+      <div class="feed-profile-header-top">
+        <div class="feed-profile-avatar-section">
+          <img id="profileImage" src="images/img1.jpg" alt="Profile" class="feed-profile-img" />
+          <button id="followBtn" class="feed-button" style="display: none;">Follow</button>
+        </div>
+        <div class="feed-profile-info-section">
+          <div class="feed-profile-header">
+            <div class="feed-profile-header-left">
+              <h2 id="profileName">Loading...</h2>
+              <p id="profileRole">Loading...</p>
+              <div class="feed-profile-stats">
+                <div class="feed-stat">
+                  <h4>Following</h4>
+                  <p id="followingCount">Loading...</p>
+                </div>
+                <div class="feed-stat">
+                  <h4>Followers</h4>
+                  <p id="followerCount">Loading...</p>
+                </div>
+              </div>
+            </div>
+            <div class="feed-profile-header-right">
+              <div class="feed-profile-actions">
+                <button id="logoutBtn" class="feed-button" style="display: none;">Log out</button>
+                <button id="editBtn" class="feed-button" style="display: none;">Edit Profile</button>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="feed-profile-section" id="djSections" style="display: none;">
+        <h4>Location</h4>
+        <p id="djLocation">Loading...</p>
+        <h4>Experience</h4>
+        <p id="djExperience">Loading...</p>
+        <h4>Skills</h4>
+        <p id="djSkills">Loading...</p>
+        <h4>Genres</h4>
+        <p id="djGenres">Loading...</p>
+        <h4>Interesting Events</h4>
+        <div id="interestingEvents">Loading...</div>
+      </div>
+
+      <div class="feed-profile-section">
+        <h4>Following List</h4>
+        <ul id="followingList"></ul>
+      </div>
+      <div class="feed-profile-section">
+        <h4>Followers List</h4>
+        <ul id="followerList"></ul>
+      </div>
+      <div class="feed-profile-section">
+        <h4>Activity Feed</h4>
+        <div id="userActivityContainer">Loading activity...</div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const profileUserId = new URLSearchParams(window.location.search).get("id");
+      const isOwnProfile = loggedInUser && loggedInUser.id == profileUserId;
+  
+      function loadProfile() {
+        fetch(`/api/users/${profileUserId}/profile`)
+          .then(res => res.json())
+          .then(user => {
+            document.getElementById("profileName").innerText = user.username;
+            document.getElementById("profileRole").innerText = user.role;
+  
+            if (user.role.toLowerCase() === "dj") {
+              document.getElementById("djSections").style.display = "block";
+              document.getElementById("profileImage").src = "images/img1.jpg";
+              document.getElementById("djLocation").innerText = user.locations || "—";
+              document.getElementById("djGenres").innerText = user.genres || "—";
+              document.getElementById("djExperience").innerText = user.experience || "—";
+              document.getElementById("djSkills").innerText = user.skills || "—";
+  
+              if (isOwnProfile) loadInterestingEvents();
+            }
+  
+            if (isOwnProfile) {
+              document.getElementById("logoutBtn").style.display = "inline-block";
+              document.getElementById("logoutBtn").onclick = () => {
+                localStorage.removeItem("echoloopUser");
+                window.location.href = "index.html";
+              };
+  
+              const editBtn = document.createElement("button");
+              editBtn.textContent = "Edit Profile";
+              editBtn.className = "feed-button";
+              editBtn.onclick = () => enableEditMode(user);
+              document.querySelector(".feed-profile-actions").appendChild(editBtn);
+            }
+  
+            if (!isOwnProfile) {
+              const followBtn = document.getElementById("followBtn");
+              followBtn.style.display = "inline-block";
+              fetch(`/api/users/${loggedInUser.id}/following`)
+                .then(res => res.json())
+                .then(users => {
+                  const isFollowing = users.some(u => u.id == profileUserId);
+                  followBtn.innerText = isFollowing ? "Unfollow" : "Follow";
+  
+                  followBtn.onclick = () => {
+                    const action = followBtn.innerText === "Follow" ? "follow" : "unfollow";
+                    fetch(`/api/users/${loggedInUser.id}/${action}/${profileUserId}`, { method: "POST" })
+                      .then(res => {
+                        if (res.ok) {
+                          followBtn.innerText = action === "follow" ? "Unfollow" : "Follow";
+                          loadFollowersAndFollowing();
+                        }
+                      });
+                  };
+                });
+            }
+          });
+      }
+  
+      function enableEditMode(user) {
+        function replaceText(id, key) {
+          const currentValue = document.getElementById(id).innerText;
+          document.getElementById(id).outerHTML =
+            `<input class="feed-input" type="text" id="${id}" value="${currentValue}" />`;
+        }
+  
+        replaceText("djLocation", "locations");
+        replaceText("djExperience", "experience");
+        replaceText("djSkills", "skills");
+        replaceText("djGenres", "genres");
+  
+        const saveBtn = document.createElement("button");
+        saveBtn.textContent = "Save Changes";
+        saveBtn.className = "feed-button";
+        saveBtn.onclick = () => saveProfileEdits(user.id);
+        document.querySelector(".feed-profile-actions").appendChild(saveBtn);
+      }
+  
+      function saveProfileEdits(userId) {
+        const updatedUser = {
+          locations: document.getElementById("djLocation").value,
+          experience: document.getElementById("djExperience").value,
+          skills: document.getElementById("djSkills").value,
+          genres: document.getElementById("djGenres").value
+        };
+  
+        fetch(`/api/users/${userId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(updatedUser)
+        })
+          .then(res => {
+            if (res.ok) {
+              alert("Profile updated!");
+              location.reload();
+            } else {
+              alert("Failed to update profile.");
+            }
+          })
+          .catch(err => {
+            console.error("Update error:", err);
+            alert("An error occurred.");
+          });
+      }
+  
+      window.removeInterest = async function (eventId, button) {
+        try {
+          const response = await fetch(`/api/events/${eventId}/interest/${loggedInUser.id}`, {
+            method: 'DELETE'
+          });
+  
+          if (response.ok) {
+            button.closest('.feed-event').remove();
+            const container = document.getElementById("interestingEvents");
+            if (!container.children.length) {
+              container.innerHTML = "<p>No interesting events found. Check out the Suggestions page to find events!</p>";
+            }
+          } else {
+            alert('Failed to remove interest in event');
+          }
+        } catch (error) {
+          console.error('Error removing interest:', error);
+          alert('Failed to remove interest in event');
+        }
+      }
+  
+      function loadInterestingEvents() {
+        fetch(`/api/events/interesting/${profileUserId}`)
+          .then(res => res.json())
+          .then(events => {
+            const container = document.getElementById("interestingEvents");
+            container.innerHTML = "";
+  
+            if (!events.length) {
+              container.innerHTML = "<p>No interesting events found. Check out the Suggestions page to find events!</p>";
+              return;
+            }
+  
+            events.forEach(event => {
+              const div = document.createElement("div");
+              div.className = "feed-event";
+              const eventDate = new Date(event.eventDate).toLocaleDateString('en-US', {
+                weekday: 'long',
+                month: 'long',
+                day: 'numeric',
+                year: 'numeric'
+              });
+  
+              div.innerHTML = `
+                <h4><a href="event_detail.html?eventId=${event.id}">${event.title}</a></h4>
+                <p>${event.genre} - ${event.location}</p>
+                <p>Event Date: ${eventDate}</p>
+                ${isOwnProfile ? `
+                  <button 
+                    onclick="removeInterest(${event.id}, this)" 
+                    class="feed-button"
+                  >
+                    Remove Interest
+                  </button>
+                ` : ''}
+              `;
+              container.appendChild(div);
+            });
+          })
+          .catch(err => {
+            console.error("Error loading interesting events:", err);
+            document.getElementById("interestingEvents").innerHTML = 
+              "<p>Failed to load interesting events.</p>";
+          });
+      }
+  
+      function loadFollowersAndFollowing() {
+        fetch(`/api/users/${profileUserId}/following`)
+          .then(res => res.json())
+          .then(users => {
+            document.getElementById("followingCount").textContent = `${users.length} following`;
+            const list = document.getElementById("followingList");
+            list.innerHTML = "";
+            users.forEach(u => {
+              const li = document.createElement("li");
+              const profileUrl = u.role?.toLowerCase() === "event community" 
+                ? `community_profile.html?id=${u.id}`
+                : `profile.html?id=${u.id}`;
+              li.innerHTML = `<a href="${profileUrl}">${u.username} (${u.genres || "no genres"})</a>`;
+              list.appendChild(li);
+            });
+          });
+  
+        fetch(`/api/users/${profileUserId}/followers`)
+          .then(res => res.json())
+          .then(users => {
+            document.getElementById("followerCount").textContent = 
+              `${users.length} follower${users.length !== 1 ? "s" : ""}`;
+            const list = document.getElementById("followerList");
+            list.innerHTML = "";
+            users.forEach(u => {
+              const li = document.createElement("li");
+              const profileUrl = u.role?.toLowerCase() === "event community" 
+                ? `community_profile.html?id=${u.id}`
+                : `profile.html?id=${u.id}`;
+              li.innerHTML = `<a href="${profileUrl}">${u.username} (${u.genres || "no genres"})</a>`;
+              list.appendChild(li);
+            });
+          });
+      }
+  
+      function loadUserActivity() {
+        Promise.all([
+          fetch(`/api/posts/user/${profileUserId}`).then(res => res.json()),
+          fetch(`/api/events/by-user/${profileUserId}`).then(res => res.json())
+        ])
+        .then(([posts, events]) => {
+          const container = document.getElementById("userActivityContainer");
+          container.innerHTML = "";
+  
+          const allItems = [];
+  
+          posts.forEach(post => {
+            allItems.push({
+              type: 'post',
+              createdAt: new Date(post.createdAt).getTime(),
+              content: post.content,
+              username: post.username,
+              imageUrl: post.imageUrl
+            });
+          });
+  
+          events.forEach(event => {
+            allItems.push({
+              type: 'event',
+              createdAt: new Date(event.createdAt).getTime(),
+              title: event.title,
+              genre: event.genre,
+              location: event.location,
+              eventDate: event.eventDate,
+              id: event.id
+            });
+          });
+  
+          allItems.sort((a, b) => b.createdAt - a.createdAt);
+  
+          if (allItems.length === 0) {
+            container.innerHTML = "<p>No activity yet.</p>";
+            return;
+          }
+  
+          allItems.forEach(item => {
+            const div = document.createElement('div');
+            const timestamp = new Date(item.createdAt).toLocaleString();
+            
+            if (item.type === 'post') {
+              div.className = 'feed-post';
+              div.innerHTML = `
+                <h4>${item.username} <small>${timestamp}</small></h4>
+                <p>${item.content}</p>
+                ${item.imageUrl ? `<img src="${item.imageUrl}" alt="Post image" />` : ''}
+              `;
+            } else {
+              div.className = 'feed-event';
+              const eventDate = new Date(item.eventDate).toLocaleDateString();
+              div.innerHTML = `
+                <h4><a href="event_detail.html?eventId=${item.id}">${item.title}</a> <small>${timestamp}</small></h4>
+                <p>${item.genre} - ${item.location}</p>
+                <p>Event Date: ${eventDate}</p>
+              `;
+            }
+  
+            container.appendChild(div);
+          });
+        });
+      }
+  
+  
+      updateNavigationBar();
+      loadProfile();
+      loadFollowersAndFollowing();
+      loadUserActivity();
+    });
+  </script>
+  
+</body>
+</html>

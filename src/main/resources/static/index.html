@@ -128,6 +128,42 @@
     .close:hover {
       color: #222;
     }
+    select:invalid {
+  		color: #888; /* gray color for the placeholder */
+	}
+	
+	select option {
+	  color: #000; /* normal text color for options */
+	}
+	
+	select option:disabled {
+	  color: #888; /* ensure placeholder stays gray in dropdown too */
+	}
+	
+	input::placeholder,
+	textarea::placeholder {
+	  color: #888; /* match select placeholder */
+	  opacity: 1;  /* remove transparency differences between browsers */
+	}
+	
+		#signupError {
+	  color: #d33;
+	  font-weight: bold;
+	  margin-bottom: 10px;
+	  display: none;
+	  font-size: 0.95em;
+	}
+	
+	.field-error {
+  color: #d33;
+  font-size: 0.85em;
+  margin-top: 4px;
+  margin-bottom: -4px;
+  text-align: left;
+  display: none;
+}
+	
+    
   </style>
 </head>
 <body>
@@ -152,16 +188,26 @@
   </div>
 
   <!-- Signup Modal -->
+  
   <div id="signupModal" class="modal">
     <div class="modal-content">
       <span class="close" onclick="closeModal('signupModal')">&times;</span>
       <h3>Sign Up</h3>
-      <input type="text" id="signupUsername" placeholder="Username" />
-      <input type="password" id="signupPassword" placeholder="Password" />
-      <select id="signupRole">
-        <option value="DJ">DJ</option>
-  		<option value="Event Community">Event Community</option>
-      </select>
+      <div id="signupError"></div>
+      <div id="signupUsernameError" class="field-error"></div>
+	<input type="text" id="signupUsername" placeholder="Username" />
+	
+	<div id="signupPasswordError" class="field-error"></div>
+	<input type="password" id="signupPassword" placeholder="Password" />
+	
+	<div id="signupRoleError" class="field-error"></div>
+	<select id="signupRole" required>
+	  <option value="" disabled selected>You are...</option>
+	  <option value="DJ">DJ</option>
+	  <option value="Event Community">Event Community</option>
+	</select>
+
+
       <textarea id="signupEvents" placeholder="Upcoming Events (one per line)" rows="3"></textarea>
       <textarea id="signupLocations" placeholder="Locations (e.g. Paris, Miami)" rows="2"></textarea>
       <textarea id="signupGenres" placeholder="Genres Preferred (e.g. House, Techno)" rows="2"></textarea>
@@ -178,48 +224,98 @@
       document.getElementById(id).style.display = "none";
     }
 
-    function login() {
-    	  const username = document.getElementById("loginUsername").value;
-    	  const password = document.getElementById("loginPassword").value;
-
-    	  fetch("http://localhost:8080/api/users/login", {
-    	    method: "POST",
-    	    headers: { "Content-Type": "application/json" },
-    	    body: JSON.stringify({ username, password })
-    	  })
-    	  .then(response => {
-    	    if (!response.ok) throw new Error("Invalid credentials");
-    	    return response.json();
-    	  })
-    	  .then(user => {
-    	    localStorage.setItem("echoloopUser", JSON.stringify(user));
-    	    closeModal('loginModal');
-    	    window.location.href = "feed.html"; // always go to feed after login
-    	  })
-    	  .catch(err => alert("Login failed: " + err.message));
+    function logout() {
+    	  localStorage.removeItem("echoloopUser");
+    	  window.location.href = "index.html";
     	}
+
+    function login() {
+      const username = document.getElementById("loginUsername").value;
+      const password = document.getElementById("loginPassword").value;
+      
+      localStorage.removeItem("echoloopUser");
+
+      fetch("http://localhost:8080/api/users/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password })
+      })
+      .then(response => {
+        if (response.ok) {
+          return response.json();
+        }
+        if (response.status === 401) {
+          throw new Error("Invalid username or password");
+        }
+        throw new Error("An error occurred during login. Please try again.");
+      })
+      .then(user => {
+        localStorage.setItem("echoloopUser", JSON.stringify(user));
+        closeModal('loginModal');
+        window.location.href = "feed.html"; // always go to feed after login
+      })
+      .catch(err => {
+        alert(err.message);
+        console.error('Login error:', err);
+      });
+    }
 
 
     function signup() {
-      const username = document.getElementById("signupUsername").value;
-      const password = document.getElementById("signupPassword").value;
-      const role = document.getElementById("signupRole").value;
-      const events = document.getElementById("signupEvents").value;
-      const locations = document.getElementById("signupLocations").value;
-      const genres = document.getElementById("signupGenres").value;
+    	  // Clear old errors
+    	  document.querySelectorAll('.field-error').forEach(el => el.style.display = 'none');
 
-      fetch("http://localhost:8080/api/users/signup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password, role, events, locations, genres })
-      })
-      .then(response => {
-        if (!response.ok) throw new Error("Signup failed");
-        alert("Signup successful. You can now log in.");
-        closeModal('signupModal');
-      })
-      .catch(err => alert(err.message));
-    }
+    	  const username = document.getElementById("signupUsername").value.trim();
+    	  const password = document.getElementById("signupPassword").value.trim();
+    	  const role = document.getElementById("signupRole").value;
+
+    	  let hasError = false;
+
+    	  if (!username) {
+    	    const e = document.getElementById("signupUsernameError");
+    	    e.textContent = "Username is required.";
+    	    e.style.display = "block";
+    	    hasError = true;
+    	  }
+
+    	  if (!password) {
+    	    const e = document.getElementById("signupPasswordError");
+    	    e.textContent = "Password is required.";
+    	    e.style.display = "block";
+    	    hasError = true;
+    	  }
+
+    	  if (!role) {
+    	    const e = document.getElementById("signupRoleError");
+    	    e.textContent = "Role is required.";
+    	    e.style.display = "block";
+    	    hasError = true;
+    	  }
+
+    	  if (hasError) return;
+
+    	  // Continue with signup
+    	  const events = document.getElementById("signupEvents").value;
+    	  const locations = document.getElementById("signupLocations").value;
+    	  const genres = document.getElementById("signupGenres").value;
+
+    	  fetch("http://localhost:8080/api/users/signup", {
+    	    method: "POST",
+    	    headers: { "Content-Type": "application/json" },
+    	    body: JSON.stringify({ username, password, role, events, locations, genres })
+    	  })
+    	  .then(response => {
+    	    if (!response.ok) throw new Error("Signup failed");
+    	    alert("Signup successful. You can now log in.");
+    	    closeModal('signupModal');
+    	  })
+    	  .catch(err => {
+    	    alert(err.message); // Or you can show a generic message below the form if you prefer
+    	  });
+    	}
+
+
+
   </script>
 
 </body>

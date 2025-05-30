@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Event Details - EchoLoop</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="script.js" defer></script>
+  <style>
+    :root {
+      --bg-primary: #f8f6ff;
+      --bg-secondary: #e8f3ff;
+      --accent-primary: #7c5cff;
+      --accent-secondary: #4a9eff;
+      --accent-tertiary: #5a6acf;
+      --text-primary: #2d3748;
+      --text-secondary: #718096;
+      --success: #48bb78;
+      --surface: #ffffff;
+      --border: rgba(226, 232, 240, 0.8);
+      --shadow-sm: 0 2px 12px rgba(124, 92, 255, 0.06);
+      --shadow-md: 0 4px 20px rgba(124, 92, 255, 0.08);
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      margin: 0;
+    }
+
+    .feed-navbar {
+      background: var(--surface);
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .feed-logo-img {
+      height: 40px;
+    }
+
+    .feed-search-bar-wrapper {
+      text-align: center;
+      padding: 24px 0;
+      background: linear-gradient(to bottom, var(--bg-secondary), var(--bg-primary));
+    }
+
+    .feed-search-bar {
+      width: 60%;
+      max-width: 600px;
+      padding: 14px 24px;
+      border: 2px solid var(--border);
+      border-radius: 30px;
+      font-size: 1em;
+      transition: all 0.2s ease;
+      background: var(--surface);
+      color: var(--text-primary);
+    }
+
+    .feed-search-bar:focus {
+      outline: none;
+      border-color: var(--accent-primary);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .search-results-container {
+      max-width: 800px;
+      margin: 0 auto 24px;
+      padding: 24px;
+      background: var(--surface);
+      border-radius: 16px;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border);
+    }
+
+    .search-results-container:empty {
+      display: none;
+    }
+
+    .feed-event-detail {
+      background: var(--surface);
+      border-radius: 16px;
+      padding: 32px;
+      box-shadow: var(--shadow-md);
+      border: 1px solid var(--border);
+      max-width: 800px;
+      margin: 40px auto;
+    }
+
+    .feed-event-detail h2 {
+      margin-bottom: 20px;
+      color: var(--accent-primary);
+      font-size: 1.8em;
+    }
+
+    .feed-event-detail p {
+      margin: 15px 0;
+      color: var(--text-primary);
+    }
+
+    .feed-event-detail strong {
+      color: var(--text-secondary);
+    }
+
+    .feed-event-actions {
+      margin-top: 30px;
+      display: flex;
+      gap: 12px;
+    }
+
+    .feed-button-dark {
+      background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.95em;
+      font-weight: 500;
+      transition: all 0.2s ease;
+    }
+
+    .feed-button-dark:hover {
+      opacity: 0.95;
+      transform: translateY(-1px);
+    }
+
+    .feed-button-dark:disabled {
+      background-color: var(--success);
+      cursor: not-allowed;
+      opacity: 0.8;
+    }
+
+    @media (max-width: 768px) {
+      .feed-search-bar {
+        width: 80%;
+      }
+
+      .feed-event-detail {
+        padding: 24px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <nav class="feed-navbar">
+    <a href="feed.html" class="feed-logo">
+      <img src="images/logoecho.png" alt="EchoLoop Logo" class="feed-logo-img" />
+    </a>
+    <div class="feed-nav-links"></div>
+  </nav>
+
+  <div class="feed-search-bar-wrapper">
+    <input type="text" id="searchInput" placeholder="Search..." class="feed-search-bar" onkeypress="handleSearchKey(event)" />
+  </div>
+  <div id="searchResults" class="search-results-container"></div>
+
+  <main class="feed-container">
+    <div id="eventDetailsBox" class="feed-event-detail">
+      <h2 id="eventTitle">Loading...</h2>
+      <p><strong>Genre:</strong> <span id="eventGenre"></span></p>
+      <p><strong>Location:</strong> <span id="eventLocation"></span></p>
+      <p><strong>Date:</strong> <span id="eventDate"></span></p>
+      <p><strong>Description:</strong><br><span id="eventDescription"></span></p>
+      <div class="feed-event-actions">
+        <button id="applyBtn" class="feed-button-dark">Apply</button>
+        <button id="interestBtn" class="feed-button-dark">I'm Interested</button>
+      </div>
+    </div>
+  </main>
+</body>
+</html>
+
+
+  <script>
+    document.addEventListener("DOMContentLoaded", async () => {
+      const user = JSON.parse(localStorage.getItem("echoloopUser"));
+      if (!user) {
+        window.location.href = "index.html";
+        return;
+      }
+
+      updateNavigationBar();
+
+      const params = new URLSearchParams(window.location.search);
+      const eventId = params.get("eventId");
+      if (!eventId) {
+        alert("Missing event ID.");
+        return;
+      }
+
+      // Fetch event details and check if user has applied/interested
+      try {
+        const [eventResponse, appliedResponse, interestedResponse] = await Promise.all([
+          fetch(`/api/events/${eventId}`),
+          fetch(`/api/events/${eventId}/has-applied/${user.id}`),
+          fetch(`/api/events/check-interests/${user.id}`)
+        ]);
+
+        if (!eventResponse.ok) throw new Error("Failed to fetch event");
+        const event = await eventResponse.json();
+        const hasApplied = await appliedResponse.json();
+        const interestedEvents = await interestedResponse.json();
+        const isInterested = interestedEvents.includes(Number(eventId));
+
+        // Update event details
+        document.getElementById("eventTitle").textContent = event.title;
+        document.getElementById("eventGenre").textContent = event.genre;
+        document.getElementById("eventLocation").textContent = event.location;
+        document.getElementById("eventDate").textContent = event.eventDate;
+        document.getElementById("eventDescription").textContent = event.description;
+
+        // Update button states
+        const applyBtn = document.getElementById("applyBtn");
+        const interestBtn = document.getElementById("interestBtn");
+
+        // Hide both buttons if user is the event creator
+        if (event.plannerId === user.id) {
+          applyBtn.style.display = "none";
+          interestBtn.style.display = "none";
+        } else {
+          // Show appropriate buttons based on user role
+          if (user.role.toLowerCase() === "dj") {
+            applyBtn.style.display = "block";
+            if (hasApplied) {
+              applyBtn.textContent = "Applied";
+              applyBtn.disabled = true;
+            } else {
+              applyBtn.onclick = () => applyToEvent(event.id);
+            }
+          } else {
+            applyBtn.style.display = "none";
+          }
+
+          // Show interest button for non-creators
+          interestBtn.style.display = "block";
+          if (isInterested) {
+            interestBtn.textContent = "Interested";
+            interestBtn.disabled = true;
+            interestBtn.classList.add("interested");
+          } else {
+            interestBtn.onclick = () => markInterest(event.id);
+          }
+        }
+
+      } catch (err) {
+        console.error(err);
+        alert("Failed to load event details.");
+      }
+    });
+
+    function applyToEvent(eventId) {
+      const user = JSON.parse(localStorage.getItem("echoloopUser"));
+      const djId = user?.id;
+
+      if (!djId) {
+        alert("You must be logged in as a DJ to apply.");
+        return;
+      }
+
+      fetch(`/api/events/${eventId}/apply/${djId}`, {
+        method: "POST"
+      })
+      .then(res => {
+        if (res.ok) {
+          const applyBtn = document.getElementById("applyBtn");
+          applyBtn.textContent = "Applied";
+          applyBtn.disabled = true;
+        } else {
+          alert("Application failed.");
+        }
+      })
+      .catch(err => {
+        console.error("Apply error:", err);
+        alert("Something went wrong.");
+      });
+    }
+
+    function markInterest(eventId) {
+      const user = JSON.parse(localStorage.getItem("echoloopUser"));
+      if (!user) {
+        alert("You must be logged in to mark interest.");
+        return;
+      }
+
+      fetch(`/api/events/${user.id}/interested/${eventId}`, { method: "POST" })
+        .then(res => {
+          if (res.ok) {
+            const interestBtn = document.getElementById("interestBtn");
+            interestBtn.textContent = "Interested";
+            interestBtn.disabled = true;
+            interestBtn.classList.add("interested");
+          } else {
+            alert("Failed to mark interest.");
+          }
+        })
+        .catch(err => {
+          console.error("Interest error:", err);
+        });
+    }
+  </script>
+</body>
+</html>

@@ -5,60 +5,79 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Create Post - EchoLoop</title>
   <link rel="stylesheet" href="style.css" />
+  <script src="script.js" defer></script>
 </head>
 <body>
-  <!-- Shared Navbar -->
   <nav class="feed-navbar">
-	<a href="feed.html" class="feed-logo">
-		  <img src="images/logoecho.png" alt="EchoLoop Logo" class="feed-logo-img" />
-		</a>
+    <a href="feed.html" class="feed-logo">
+      <img src="images/logoecho.png" alt="EchoLoop Logo" class="feed-logo-img" />
+    </a>
     <div class="feed-nav-links">
-      <a href="suggestions.html">Suggestions</a>
-      <a href="create_post.html" class="active">Create Post</a>
-      <a href="opportunities.html">Opportunities</a>
-      <a href="#" onclick="goToAccount()">Account</a>
+      <!-- Navigation will be populated by JavaScript -->
     </div>
   </nav>
 
-  <!-- Search Bar Section -->
-  <div class="feed-search-bar-wrapper">
-    <input type="text" placeholder="Search" class="feed-search-bar" />
-  </div>
-
-  <!-- Create Post Form -->
   <main class="feed-create-post-container">
     <div class="feed-create-post-box">
       <h2>Create a Post</h2>
-      <textarea placeholder="What’s on your mind?" class="feed-create-textarea"></textarea>
-
-      <div class="feed-create-actions">
-        <label class="feed-upload-label">
-          <img src="images/image-icon.png" alt="Upload" class="feed-upload-icon" />
-          Image
-		<input type="file" class="feed-upload-input" type="file" style="display: none;" />
-        </label>
-        <button class="feed-button-yellow">Post</button>
-      </div>
+      <form id="createPostForm" enctype="multipart/form-data">
+        <textarea id="postContent" placeholder="What's on your mind?" class="feed-create-textarea" required></textarea>
+        <div class="feed-create-actions">
+          <label class="feed-upload-label">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+              <circle cx="8.5" cy="8.5" r="1.5"/>
+              <polyline points="21 15 16 10 5 21"/>
+            </svg>
+            Image
+            <input type="file" id="postImage" accept="image/*" class="feed-upload-input" style="display: none;">
+          </label>
+          <button type="submit" class="feed-button">Post</button>
+        </div>
+      </form>
     </div>
   </main>
-    <script type="text/javascript"> 
-    function goToAccount() {
-    	  const user = JSON.parse(localStorage.getItem("echoloopUser"));
-    	  if (!user) {
-    	    alert("You're not logged in.");
-    	    window.location.href = "index.html";
-    	  } else {
-    	    const role = user.role?.toLowerCase();
-    	    if (role === "dj") {
-    	      window.location.href = "account_dj.html";
-    	    } else if (role === "event community") {
-    	      window.location.href = "account_community.html";
-    	    } else {
-    	      alert("Unknown user role: " + user.role);
-    	    }
-    	  }
-    	}
 
-</script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const form = document.getElementById('createPostForm');
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        const user = JSON.parse(localStorage.getItem("echoloopUser"));
+        if (!user) {
+          alert("You're not logged in.");
+          window.location.href = "index.html";
+          return;
+        }
+
+        const formData = new FormData();
+        formData.append("userId", user.id);
+        formData.append("content", document.getElementById("postContent").value);
+
+        const imageInput = document.getElementById("postImage");
+        if (imageInput && imageInput.files.length > 0) {
+          formData.append("image", imageInput.files[0]);
+        }
+
+        fetch("/api/posts", {
+          method: "POST",
+          body: formData
+        })
+        .then(response => {
+          if (response.ok) {
+            alert("Post created successfully!");
+            window.location.href = "feed.html";
+          } else {
+            throw new Error("Failed to create post");
+          }
+        })
+        .catch(error => {
+          console.error("Error:", error);
+          alert("Failed to create post. Please try again.");
+        });
+      });
+    });
+  </script>
 </body>
 </html>

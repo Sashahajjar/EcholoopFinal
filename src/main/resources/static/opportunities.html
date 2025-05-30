@@ -5,9 +5,92 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Opportunities - EchoLoop</title>
   <link rel="stylesheet" href="style.css" />
+  <script src="script.js" defer></script>
+  <script src="search.js" defer></script>
+  <style>/* Opportunities Container */
+    .feed-opportunities-container {
+      max-width: 1000px;
+      margin: 40px auto;
+      padding: 0 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+    
+    /* Individual Opportunity Card */
+    .feed-opportunity-card {
+      background: var(--surface);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border);
+      transition: box-shadow 0.2s ease, transform 0.2s ease;
+    }
+    
+    .feed-opportunity-card:hover {
+      box-shadow: var(--shadow-md);
+      transform: translateY(-2px);
+    }
+    
+    .feed-opportunity-card h3 {
+      margin: 0 0 12px;
+      font-size: 1.3em;
+      color: var(--accent-primary);
+    }
+    
+    .feed-opportunity-card h3 a {
+      color: var(--accent-primary);
+      text-decoration: none;
+    }
+    
+    .feed-opportunity-card h3 a:hover {
+      color: var(--accent-secondary);
+    }
+    
+    .feed-opportunity-card p {
+      margin: 0 0 16px;
+      font-size: 0.95em;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+    
+    /* Apply Button */
+    .feed-button-dark {
+      background: linear-gradient(135deg, var(--accent-primary), var(--accent-tertiary));
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 10px;
+      font-size: 0.95em;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .feed-button-dark:hover {
+      opacity: 0.95;
+      transform: translateY(-1px);
+    }
+    
+    /* Responsive Layout */
+    @media (max-width: 768px) {
+      .feed-opportunities-container {
+        padding: 0 16px;
+      }
+    
+      .feed-opportunity-card {
+        padding: 20px;
+      }
+    
+      .feed-button-dark {
+        width: 100%;
+        text-align: center;
+      }
+    }
+    </style>
 </head>
 <body>
-  <!-- Shared Navbar -->
+  <!-- Navbar -->
   <nav class="feed-navbar">
     <a href="feed.html" class="feed-logo">
       <img src="images/logoecho.png" alt="EchoLoop Logo" class="feed-logo-img" />
@@ -16,56 +99,105 @@
       <a href="suggestions.html">Suggestions</a>
       <a href="create_post.html">Create Post</a>
       <a href="opportunities.html" class="active">Opportunities</a>
+      <a id="createEventLink" href="create_event.html" style="display: none;">Create Event</a>
+      <a href="my_applications.html">My Applications</a>
       <a href="#" onclick="goToAccount()">Account</a>
     </div>
   </nav>
 
-  <!-- Search Bar Section -->
-  <div class="feed-search-bar-wrapper">
-    <input type="text" placeholder="Search" class="feed-search-bar" />
-  </div>
+<div class="feed-search-bar-wrapper">
+  <input type="text" id="searchInput" placeholder="Search DJs…" class="feed-search-bar" onkeypress="handleSearchKey(event)" />
+</div>
+<div id="searchResults" class="search-results-container"></div>
 
-  <!-- Opportunities Grid -->
-  <main class="feed-opportunities-container">
-    <div class="feed-opportunity-card">
-      <h3>City Lights Party</h3>
-      <p>New York, NY<br>Looking for a DJ<br>May 22, 2024</p>
-      <button class="feed-button-dark">View</button>
-    </div>
-    <div class="feed-opportunity-card">
-      <h3>Electric Wave Festival</h3>
-      <p>Miami, FL<br>Looking for a DJ<br>June 15, 2024</p>
-      <button class="feed-button-dark">View</button>
-    </div>
-    <div class="feed-opportunity-card">
-      <h3>Vibrant Rhythms Event</h3>
-      <p>Austin, TX<br>Looking for a DJ<br>July 3, 2024</p>
-      <button class="feed-button-dark">View</button>
-    </div>
-    <div class="feed-opportunity-card">
-      <h3>Neon Pulse Club Night</h3>
-      <p>Las Vegas, NV<br>Looking for a DJ<br>August 10, 2024</p>
-      <button class="feed-button-dark">View</button>
-    </div>
-  </main>
-  <script type="text/javascript"> 
-  function goToAccount() {
-	  const user = JSON.parse(localStorage.getItem("echoloopUser"));
-	  if (!user) {
-	    alert("You're not logged in.");
-	    window.location.href = "index.html";
-	  } else {
-	    const role = user.role?.toLowerCase();
-	    if (role === "dj") {
-	      window.location.href = "account_dj.html";
-	    } else if (role === "event community") {
-	      window.location.href = "account_community.html";
-	    } else {
-	      alert("Unknown user role: " + user.role);
-	    }
-	  }
-	}
 
-</script>
+  <!-- Opportunities -->
+  <main class="feed-opportunities-container" id="opportunitiesContainer"></main>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const isDJ = loggedInUser?.role?.toLowerCase() === "dj";
+      const isCommunity = loggedInUser?.role?.toLowerCase() === "event community";
+  
+      if (!isDJ) {
+        alert("Only DJs can view this page.");
+        window.location.href = "feed.html";
+        return;
+      }
+  
+      const createBtn = document.getElementById("createEventLink");
+      if (isCommunity && createBtn) {
+        createBtn.style.display = "inline-block";
+      }
+  
+      // First get all applied event IDs for the current DJ
+      fetch(`/api/events/check-applications/${loggedInUser.id}`)
+        .then(res => res.json())
+        .then(appliedEventIds => {
+          // Then get the opportunities
+          fetch("/api/events/opportunities")
+            .then(res => res.json())
+            .then(events => {
+              const container = document.getElementById("opportunitiesContainer");
+              if (events.length === 0) {
+                container.innerHTML = "<p>No opportunities available.</p>";
+                return;
+              }
+  
+              // Sort by createdAt descending (most recent first)
+              events.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  
+              events.forEach(event => {
+                const div = document.createElement("div");
+                div.className = "feed-opportunity-card";
+                const hasApplied = appliedEventIds.includes(event.id);
+  
+                div.innerHTML = `
+                  <h3><a href="event_detail.html?eventId=${event.id}" style="text-decoration: none; color: inherit;">${event.title}</a></h3>
+                  <p>${event.location}<br>${event.genre}<br>${event.eventDate}</p>
+                  <button class="feed-button-dark" onclick="applyToEvent(${event.id}, this)" ${hasApplied ? "disabled" : ""}>
+                    ${hasApplied ? "Applied" : "Apply"}
+                  </button>
+                `;
+  
+                container.appendChild(div);
+              });
+            });
+        });
+    });
+  
+    function applyToEvent(eventId, button) {
+      const djId = loggedInUser?.id;
+  
+      if (!djId) {
+        alert("You must be logged in as a DJ to apply.");
+        return;
+      }
+  
+      fetch(`/api/events/${eventId}/apply/${djId}`, {
+        method: "POST"
+      })
+      .then(res => {
+        if (res.ok) {
+          button.textContent = "Applied";
+          button.disabled = true;
+          button.classList.add("applied");
+        } else {
+          return res.text().then(text => { throw new Error(text); });
+        }
+      })
+      .catch(err => {
+        console.error("Apply error:", err);
+        alert("Something went wrong.");
+      });
+    }
+  
+    function viewEventDetail(eventId) {
+      window.location.href = `event_detail.html?eventId=${eventId}`;
+    }
+  </script>
+  
+  
+
 </body>
 </html>

@@ -5,7 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Profile - EchoLoop</title>
   <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="css/notifications.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <script src="/webjars/sockjs-client/1.5.1/sockjs.min.js"></script>
+  <script src="/webjars/stomp-websocket/2.3.4/stomp.min.js"></script>
   <script src="script.js" defer></script>
+  <script src="/js/notifications.js"></script>
+  <script src="/js/common.js"></script>
   <style>
     :root {
       --bg-primary: #f8f6ff;
@@ -41,13 +48,57 @@
       border: 1px solid var(--border);
     }
   
+    .feed-profile-header-top {
+      display: flex;
+      gap: 24px;
+      margin-bottom: 32px;
+    }
+  
+    .feed-profile-avatar-section {
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+  
     .feed-profile-img {
       width: 120px;
       height: 120px;
       border-radius: 50%;
       object-fit: cover;
       border: 3px solid var(--accent-secondary);
-      margin-bottom: 16px;
+    }
+  
+    .feed-profile-info-section {
+      flex: 1;
+      min-width: 0;
+    }
+  
+    .feed-profile-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+  
+    .feed-profile-header-left h2 {
+      margin: 0 0 8px 0;
+      font-size: 1.5rem;
+      color: var(--text-primary);
+    }
+  
+    .feed-profile-header-left p {
+      margin: 0;
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+    }
+  
+    .feed-profile-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
     }
   
     .feed-button {
@@ -58,28 +109,39 @@
       color: white;
       cursor: pointer;
       font-weight: 600;
-      transition: background 0.2s;
+      transition: opacity 0.2s;
+      white-space: nowrap;
     }
   
     .feed-button:hover {
-      background: linear-gradient(135deg, var(--accent-secondary), var(--accent-primary));
+      opacity: 0.9;
     }
   
-    .feed-input,
-    .feed-textarea {
-      width: 100%;
-      padding: 10px;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      margin-top: 8px;
-      margin-bottom: 12px;
-    }
-  
-    .feed-profile-header {
+    .feed-profile-stats {
       display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 24px;
+      gap: 32px;
+      background-color: var(--bg-primary);
+      padding: 16px 24px;
+      border-radius: 12px;
+      margin: 24px 0;
+    }
+  
+    .feed-stat {
+      text-align: center;
+    }
+  
+    .feed-stat h4 {
+      margin: 0;
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+  
+    .feed-stat p {
+      margin: 4px 0 0;
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text-primary);
     }
   
     .feed-profile-section {
@@ -87,116 +149,174 @@
     }
   
     .feed-profile-section h4 {
-      margin-bottom: 8px;
-      font-size: 1.1em;
-      color: var(--accent-primary);
+      margin: 0 0 16px 0;
+      font-size: 1.1rem;
+      color: var(--text-primary);
+      font-weight: 600;
     }
   
     .feed-profile-section p {
-      font-size: 0.95em;
+      margin: 0 0 16px 0;
       color: var(--text-secondary);
-    }
-  
-    .feed-profile-stats {
-      display: flex;
-      justify-content: space-around;
-      background-color: var(--surface);
-      padding: 16px;
-      border-radius: 12px;
-      margin-bottom: 32px;
-      border: 1px solid var(--border);
-    }
-  
-    .feed-stat h4 {
-      margin: 0;
-      font-size: 1em;
-      color: var(--accent-primary);
-    }
-  
-    .feed-stat p {
-      margin: 4px 0 0;
-      font-weight: 500;
-      color: var(--text-secondary);
+      line-height: 1.5;
     }
   
     .feed-lists-section {
-      display: flex;
-      gap: 40px;
-      flex-wrap: wrap;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 24px;
     }
   
     .feed-following-list,
     .feed-followers-list {
-      flex: 1;
-      min-width: 300px;
+      background: var(--bg-primary);
+      padding: 20px;
+      border-radius: 12px;
     }
   
     ul {
-      padding-left: 20px;
+      list-style: none;
+      padding: 0;
+      margin: 0;
     }
   
     li {
-      margin-bottom: 8px;
+      margin-bottom: 12px;
+      padding: 8px;
+      background: var(--surface);
+      border-radius: 8px;
+      border: 1px solid var(--border);
     }
   
     a {
       text-decoration: none;
       color: var(--accent-primary);
+      transition: color 0.2s;
     }
   
     a:hover {
-      text-decoration: underline;
+      color: var(--accent-secondary);
     }
   
-    .feed-post,
-    .feed-event {
+    .feed-post {
       border: 1px solid var(--border);
       border-radius: 12px;
-      padding: 16px;
+      padding: 20px;
       margin-bottom: 16px;
       background-color: var(--surface);
       box-shadow: var(--shadow-sm);
     }
   
+    .feed-post img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
+      margin-top: 12px;
+      display: block;
+    }
+  
     .feed-post-actions {
-      margin-top: 10px;
+      margin-top: 16px;
       display: flex;
       gap: 8px;
     }
   
     .feed-no-activity {
       text-align: center;
+      padding: 32px;
       color: var(--text-secondary);
+      background: var(--bg-primary);
+      border-radius: 12px;
       font-style: italic;
     }
   
+    .feed-profile-buttons {
+      display: flex;
+      gap: 8px;
+      flex-direction: column;
+      width: 100%;
+    }
+    
+    .feed-profile-buttons .feed-button {
+      width: 100%;
+    }
+    
     @media (max-width: 768px) {
+      .feed-profile-header-top {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+      }
+  
       .feed-profile-header {
         flex-direction: column;
-        align-items: flex-start;
+        align-items: center;
+      }
+  
+      .feed-profile-actions {
+        justify-content: center;
+        margin-top: 16px;
       }
   
       .feed-profile-stats {
         flex-direction: column;
         align-items: center;
+        gap: 16px;
       }
+  
+      .feed-lists-section {
+        grid-template-columns: 1fr;
+      }
+  
+      .feed-profile-buttons {
+        flex-direction: row;
+      }
+      
+      .feed-profile-buttons .feed-button {
+        flex: 1;
+      }
+    }
+
+    .feed-input,
+    .feed-textarea {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin-bottom: 12px;
+      font-family: inherit;
+      font-size: 0.95rem;
+      color: var(--text-primary);
+      background: var(--bg-primary);
+    }
+
+    .feed-textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+
+    .feed-input:focus,
+    .feed-textarea:focus {
+      outline: none;
+      border-color: var(--accent-primary);
     }
   </style>
 </head>
 <body>
-  <nav class="feed-navbar">
-    <a href="feed.html">
-      <img src="images/logoecho.png" alt="EchoLoop Logo" class="feed-logo-img" />
-    </a>
-    <div class="feed-nav-links"></div>
-  </nav>
+  <!-- Navbar will be injected by common.js -->
 
   <main class="feed-account-container">
     <div class="feed-profile-card">
       <div class="feed-profile-header-top">
         <div class="feed-profile-avatar-section">
-          <img id="profileImage" src="images/img1.jpg" alt="Profile" class="feed-profile-img" />
-          <button id="followBtn" class="feed-button" style="display: none;">Follow</button>
+          <img id="profileImage" src="" alt="Profile" class="feed-profile-img" />
+          <div class="feed-profile-buttons">
+            <button id="followBtn" class="feed-button" style="display: none;">Follow</button>
+            <button id="messageBtn" class="feed-button" style="display: none;" onclick="startConversation()">Message</button>
+            <input type="file" id="profilePictureInput" accept="image/*" style="display: none;">
+            <button id="uploadPictureBtn" class="feed-button" style="display: none;" onclick="document.getElementById('profilePictureInput').click()">Change Picture</button>
+            <button id="savePictureBtn" class="feed-button" style="display: none;">Save Picture</button>
+          </div>
         </div>
         <div class="feed-profile-info-section">
           <div class="feed-profile-header">
@@ -218,24 +338,49 @@
               <div class="feed-profile-actions">
                 <button id="logoutBtn" class="feed-button" style="display: none;">Log out</button>
                 <button id="editBtn" class="feed-button" style="display: none;">Edit Profile</button>
-
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <div class="feed-profile-section" id="djSections" style="display: none;">
+      <div class="feed-profile-section" id="djProfileSections" style="display: none;">
         <h4>Location</h4>
-        <p id="djLocation">Loading...</p>
+        <div id="locationSection">
+          <p id="djLocation">Loading...</p>
+        </div>
+        <div id="locationEditSection" style="display: none;">
+          <input type="text" id="locationInput" class="feed-input" />
+        </div>
+
         <h4>Experience</h4>
-        <p id="djExperience">Loading...</p>
+        <div id="experienceSection">
+          <p id="djExperience">Loading...</p>
+        </div>
+        <div id="experienceEditSection" style="display: none;">
+          <textarea id="experienceInput" class="feed-textarea"></textarea>
+        </div>
+
         <h4>Skills</h4>
-        <p id="djSkills">Loading...</p>
+        <div id="skillsSection">
+          <p id="djSkills">Loading...</p>
+        </div>
+        <div id="skillsEditSection" style="display: none;">
+          <textarea id="skillsInput" class="feed-textarea"></textarea>
+        </div>
+
         <h4>Genres</h4>
-        <p id="djGenres">Loading...</p>
-        <h4>Interesting Events</h4>
-        <div id="interestingEvents">Loading...</div>
+        <div id="genresSection">
+          <p id="djGenres">Loading...</p>
+        </div>
+        <div id="genresEditSection" style="display: none;">
+          <input type="text" id="genresInput" class="feed-input" />
+        </div>
+      </div>
+
+      <div id="editActions" class="feed-profile-actions" style="display: none;">
+        <button id="saveChangesBtn" class="feed-button">Save Changes</button>
+        <button id="cancelBtn" class="feed-button">Cancel</button>
       </div>
 
       <div class="feed-profile-section">
@@ -246,6 +391,12 @@
         <h4>Followers List</h4>
         <ul id="followerList"></ul>
       </div>
+
+      <div class="feed-profile-section" id="interestingEventsSection" style="display: none;">
+        <h4>Interesting Events</h4>
+        <div id="interestingEvents">Loading...</div>
+      </div>
+
       <div class="feed-profile-section">
         <h4>Activity Feed</h4>
         <div id="userActivityContainer">Loading activity...</div>
@@ -258,41 +409,113 @@
       const profileUserId = new URLSearchParams(window.location.search).get("id");
       const isOwnProfile = loggedInUser && loggedInUser.id == profileUserId;
   
+      // Add profile picture upload handler
+      if (isOwnProfile) {
+        document.getElementById('uploadPictureBtn').style.display = 'inline-block';
+        let selectedFile = null;
+
+        document.getElementById('profilePictureInput').onchange = function(e) {
+          const file = e.target.files[0];
+          if (!file) return;
+
+          selectedFile = file;
+          // Show preview
+          const reader = new FileReader();
+          reader.onload = function(e) {
+            document.getElementById('profileImage').src = e.target.result;
+            document.getElementById('savePictureBtn').style.display = 'inline-block';
+          };
+          reader.readAsDataURL(file);
+        };
+
+        document.getElementById('savePictureBtn').onclick = async function() {
+          if (!selectedFile) return;
+
+          const formData = new FormData();
+          formData.append('image', selectedFile);
+
+          try {
+            const response = await fetch(`/api/users/${loggedInUser.id}/profile-picture`, {
+              method: 'POST',
+              body: formData
+            });
+
+            if (response.ok) {
+              const profilePicUrl = await response.text();
+              document.getElementById('profileImage').src = profilePicUrl;
+              selectedFile = null;
+              document.getElementById('savePictureBtn').style.display = 'none';
+              document.getElementById('profilePictureInput').value = '';
+              alert('Profile picture updated successfully!');
+            } else {
+              throw new Error('Failed to upload profile picture');
+            }
+          } catch (error) {
+            console.error('Error:', error);
+            alert('Failed to upload profile picture. Please try again.');
+          }
+        };
+      }
+  
       function loadProfile() {
         fetch(`/api/users/${profileUserId}/profile`)
-          .then(res => res.json())
+          .then(res => {
+            if (!res.ok) {
+              if (res.status === 404) {
+                throw new Error('Profile not found');
+              }
+              throw new Error('Failed to load profile');
+            }
+            return res.json();
+          })
           .then(user => {
             document.getElementById("profileName").innerText = user.username;
             document.getElementById("profileRole").innerText = user.role;
   
+            // Update profile picture only if one exists
+            if (user.profilePicture) {
+              document.getElementById("profileImage").src = user.profilePicture;
+            } else {
+              // Only use default for event community, leave blank for DJ
+              document.getElementById("profileImage").src = user.role?.toLowerCase() === "event community" ? "images/venue-profile.jpg" : "";
+            }
+  
             if (user.role.toLowerCase() === "dj") {
-              document.getElementById("djSections").style.display = "block";
-              document.getElementById("profileImage").src = "images/img1.jpg";
+              document.getElementById("djProfileSections").style.display = "block";
+              document.getElementById("interestingEventsSection").style.display = "block";
               document.getElementById("djLocation").innerText = user.locations || "—";
               document.getElementById("djGenres").innerText = user.genres || "—";
               document.getElementById("djExperience").innerText = user.experience || "—";
               document.getElementById("djSkills").innerText = user.skills || "—";
   
-              if (isOwnProfile) loadInterestingEvents();
+              loadInterestingEvents();
             }
   
             if (isOwnProfile) {
               document.getElementById("logoutBtn").style.display = "inline-block";
+              document.getElementById("editBtn").style.display = "inline-block";
+              document.getElementById("messageBtn").style.display = "none";
+              document.getElementById("followBtn").style.display = "none";
+
               document.getElementById("logoutBtn").onclick = () => {
                 localStorage.removeItem("echoloopUser");
                 window.location.href = "index.html";
               };
-  
-              const editBtn = document.createElement("button");
-              editBtn.textContent = "Edit Profile";
-              editBtn.className = "feed-button";
-              editBtn.onclick = () => enableEditMode(user);
-              document.querySelector(".feed-profile-actions").appendChild(editBtn);
-            }
-  
-            if (!isOwnProfile) {
+
+              document.getElementById("editBtn").onclick = () => {
+                enableEditMode(user);
+              };
+            } else {
+              document.getElementById("logoutBtn").style.display = "none";
+              document.getElementById("editBtn").style.display = "none";
+              document.getElementById("messageBtn").style.display = "inline-block";
+              document.getElementById("followBtn").style.display = "inline-block";
+
+              document.getElementById("messageBtn").onclick = () => {
+                startConversation(profileUserId, user.username);
+              };
+
               const followBtn = document.getElementById("followBtn");
-              followBtn.style.display = "inline-block";
               fetch(`/api/users/${loggedInUser.id}/following`)
                 .then(res => res.json())
                 .then(users => {
@@ -311,81 +534,124 @@
                   };
                 });
             }
+          })
+          .catch(err => {
+            console.error("Error loading profile:", err);
+            document.getElementById("profileName").innerText = err.message === "Profile not found" ? "Profile not found" : "Error loading profile";
+            document.getElementById("profileRole").innerText = "Please try again later";
+            document.getElementById("djProfileSections").style.display = "none";
+            document.getElementById("logoutBtn").style.display = "none";
+            document.getElementById("editBtn").style.display = "none";
+            document.getElementById("messageBtn").style.display = "none";
+            document.getElementById("followBtn").style.display = "none";
           });
       }
   
       function enableEditMode(user) {
-        function replaceText(id, key) {
-          const currentValue = document.getElementById(id).innerText;
-          document.getElementById(id).outerHTML =
-            `<input class="feed-input" type="text" id="${id}" value="${currentValue}" />`;
-        }
-  
-        replaceText("djLocation", "locations");
-        replaceText("djExperience", "experience");
-        replaceText("djSkills", "skills");
-        replaceText("djGenres", "genres");
-  
-        const saveBtn = document.createElement("button");
-        saveBtn.textContent = "Save Changes";
-        saveBtn.className = "feed-button";
-        saveBtn.onclick = () => saveProfileEdits(user.id);
-        document.querySelector(".feed-profile-actions").appendChild(saveBtn);
+        // Show edit sections and hide display sections
+        document.getElementById('locationSection').style.display = 'none';
+        document.getElementById('experienceSection').style.display = 'none';
+        document.getElementById('skillsSection').style.display = 'none';
+        document.getElementById('genresSection').style.display = 'none';
+
+        document.getElementById('locationEditSection').style.display = 'block';
+        document.getElementById('experienceEditSection').style.display = 'block';
+        document.getElementById('skillsEditSection').style.display = 'block';
+        document.getElementById('genresEditSection').style.display = 'block';
+
+        // Set current values in edit fields
+        document.getElementById('locationInput').value = user.locations || '';
+        document.getElementById('experienceInput').value = user.experience || '';
+        document.getElementById('skillsInput').value = user.skills || '';
+        document.getElementById('genresInput').value = user.genres || '';
+
+        // Store original values for cancel functionality
+        window.originalLocation = user.locations || '';
+        window.originalExperience = user.experience || '';
+        window.originalSkills = user.skills || '';
+        window.originalGenres = user.genres || '';
+
+        // Show edit actions and hide edit button
+        document.getElementById('editActions').style.display = 'flex';
+        document.getElementById('editBtn').style.display = 'none';
       }
-  
-      function saveProfileEdits(userId) {
+
+      function cancelEdit() {
+        // Restore original values
+        document.getElementById('djLocation').innerText = window.originalLocation || '—';
+        document.getElementById('djExperience').innerText = window.originalExperience || '—';
+        document.getElementById('djSkills').innerText = window.originalSkills || '—';
+        document.getElementById('djGenres').innerText = window.originalGenres || '—';
+
+        // Show display sections and hide edit sections
+        document.getElementById('locationSection').style.display = 'block';
+        document.getElementById('experienceSection').style.display = 'block';
+        document.getElementById('skillsSection').style.display = 'block';
+        document.getElementById('genresSection').style.display = 'block';
+
+        document.getElementById('locationEditSection').style.display = 'none';
+        document.getElementById('experienceEditSection').style.display = 'none';
+        document.getElementById('skillsEditSection').style.display = 'none';
+        document.getElementById('genresEditSection').style.display = 'none';
+
+        // Hide edit actions and show edit button
+        document.getElementById('editActions').style.display = 'none';
+        document.getElementById('editBtn').style.display = 'inline-block';
+      }
+
+      function saveProfileEdits() {
+        console.log("Save profile edits called"); // Debug log
         const updatedUser = {
-          locations: document.getElementById("djLocation").value,
-          experience: document.getElementById("djExperience").value,
-          skills: document.getElementById("djSkills").value,
-          genres: document.getElementById("djGenres").value
+          locations: document.getElementById('locationInput').value,
+          experience: document.getElementById('experienceInput').value,
+          skills: document.getElementById('skillsInput').value,
+          genres: document.getElementById('genresInput').value
         };
-  
-        fetch(`/api/users/${userId}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
+
+        fetch(`/api/users/${loggedInUser.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(updatedUser)
         })
-          .then(res => {
-            if (res.ok) {
-              alert("Profile updated!");
-              location.reload();
-            } else {
-              alert("Failed to update profile.");
-            }
-          })
-          .catch(err => {
-            console.error("Update error:", err);
-            alert("An error occurred.");
-          });
-      }
-  
-      window.removeInterest = async function (eventId, button) {
-        try {
-          const response = await fetch(`/api/events/${eventId}/interest/${loggedInUser.id}`, {
-            method: 'DELETE'
-          });
-  
-          if (response.ok) {
-            button.closest('.feed-event').remove();
-            const container = document.getElementById("interestingEvents");
-            if (!container.children.length) {
-              container.innerHTML = "<p>No interesting events found. Check out the Suggestions page to find events!</p>";
-            }
+        .then(res => {
+          if (res.ok) {
+            // Update display values
+            document.getElementById('djLocation').innerText = updatedUser.locations || '—';
+            document.getElementById('djExperience').innerText = updatedUser.experience || '—';
+            document.getElementById('djSkills').innerText = updatedUser.skills || '—';
+            document.getElementById('djGenres').innerText = updatedUser.genres || '—';
+
+            // Store new values as original
+            window.originalLocation = updatedUser.locations;
+            window.originalExperience = updatedUser.experience;
+            window.originalSkills = updatedUser.skills;
+            window.originalGenres = updatedUser.genres;
+
+            // Return to display mode
+            cancelEdit();
+            alert('Profile updated successfully!');
           } else {
-            alert('Failed to remove interest in event');
+            alert('Failed to update profile.');
           }
-        } catch (error) {
-          console.error('Error removing interest:', error);
-          alert('Failed to remove interest in event');
-        }
+        })
+        .catch(err => {
+          console.error('Update error:', err);
+          alert('An error occurred while updating the profile.');
+        });
       }
   
       function loadInterestingEvents() {
+        const container = document.getElementById("interestingEvents");
+        container.innerHTML = "<p>Loading interesting events...</p>";
+
         fetch(`/api/events/interesting/${profileUserId}`)
-          .then(res => res.json())
+          .then(res => {
+            if (!res.ok) {
+              throw new Error('Failed to load interesting events');
+            }
+            return res.json();
+          })
           .then(events => {
-            const container = document.getElementById("interestingEvents");
             container.innerHTML = "";
   
             if (!events.length) {
@@ -421,8 +687,7 @@
           })
           .catch(err => {
             console.error("Error loading interesting events:", err);
-            document.getElementById("interestingEvents").innerHTML = 
-              "<p>Failed to load interesting events.</p>";
+            container.innerHTML = "<p>Failed to load interesting events. Please try again later.</p>";
           });
       }
   
@@ -527,11 +792,18 @@
         });
       }
   
-  
       updateNavigationBar();
       loadProfile();
       loadFollowersAndFollowing();
       loadUserActivity();
+
+      // Add event listeners for edit buttons
+      if (document.getElementById('saveChangesBtn')) {
+        document.getElementById('saveChangesBtn').onclick = saveProfileEdits;
+      }
+      if (document.getElementById('cancelBtn')) {
+        document.getElementById('cancelBtn').onclick = cancelEdit;
+      }
     });
   </script>
   

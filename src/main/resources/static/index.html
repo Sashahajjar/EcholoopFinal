@@ -4,176 +4,425 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>EchoLoop - Home</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
+    :root {
+      --bg-primary: #f8f6ff;
+      --bg-secondary: #e8f3ff;
+      --accent-primary: #7c5cff;
+      --accent-secondary: #4a9eff;
+      --accent-tertiary: #5a6acf;
+      --text-primary: #2d3748;
+      --text-secondary: #718096;
+      --success: #48bb78;
+      --surface: #ffffff;
+      --border: rgba(226, 232, 240, 0.8);
+      --shadow-sm: 0 2px 12px rgba(124, 92, 255, 0.06);
+      --shadow-md: 0 4px 20px rgba(124, 92, 255, 0.08);
+    }
+
     body {
-      background-color: #221437;
-      color: #f9eccc;
-      font-family: 'Josefin Sans', sans-serif;
+      background: linear-gradient(135deg, #f8f6ff 0%, #e8f3ff 50%, #f0e7ff 100%);
+      color: var(--text-primary);
+      font-family: 'Inter', sans-serif;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       min-height: 100vh;
       text-align: center;
-      padding: 0 20px;
+      padding: 20px;
+      margin: 0;
+      position: relative;
+      overflow-x: hidden;
+      box-sizing: border-box;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 100vh;
+      background: radial-gradient(circle at top right, rgba(124, 92, 255, 0.1) 0%, transparent 70%),
+                  radial-gradient(circle at bottom left, rgba(74, 158, 255, 0.1) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .content-wrapper {
+      position: relative;
+      z-index: 1;
+      animation: fadeIn 1s ease-out;
+      width: 100%;
+      max-width: 1200px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 20px;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
     }
 
     .feed-landing-logo {
       height: 500px;
       width: auto;
-      margin-bottom: 40px;
+      margin: 0 auto 20px;
+      filter: drop-shadow(0 8px 24px rgba(124, 92, 255, 0.2));
+      transition: transform 0.3s ease;
+      animation: float 6s ease-in-out infinite;
+      mix-blend-mode: multiply;
+      max-width: 90%;
+      object-fit: contain;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+
+    .feed-landing-logo:hover {
+      transform: scale(1.02);
     }
 
     h2 {
-      font-size: 2em;
-      font-weight: 400;
-      margin-bottom: 30px;
+      font-size: clamp(1.8rem, 5vw, 2.5rem);
+      font-weight: 700;
+      margin: 0 0 40px 0;
+      color: var(--text-primary);
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: slideIn 0.8s ease-out;
+      width: 100%;
+      max-width: 800px;
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateX(-20px); }
+      to { opacity: 1; transform: translateX(0); }
     }
 
     .feed-auth-buttons {
       display: flex;
-      gap: 20px;
+      gap: clamp(10px, 3vw, 20px);
       flex-wrap: wrap;
       justify-content: center;
+      width: 100%;
+      max-width: 500px;
+      padding: 0 20px;
     }
 
     .feed-button-purple,
     .feed-button-yellow {
-      padding: 12px 24px;
-      font-size: 1em;
-      font-weight: bold;
+      padding: clamp(12px, 2vw, 16px) clamp(24px, 4vw, 40px);
+      font-size: clamp(0.9rem, 2vw, 1.1rem);
+      font-weight: 600;
       border: none;
-      border-radius: 10px;
+      border-radius: clamp(8px, 2vw, 16px);
       cursor: pointer;
-      transition: 0.2s ease-in-out;
+      transition: all 0.3s ease;
+      box-shadow: var(--shadow-sm);
+      flex: 1;
+      min-width: 140px;
+      max-width: 200px;
+    }
+
+    .feed-button-purple::before,
+    .feed-button-yellow::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.2),
+        transparent
+      );
+      transition: 0.5s;
+    }
+
+    .feed-button-purple:hover::before,
+    .feed-button-yellow:hover::before {
+      left: 100%;
     }
 
     .feed-button-purple {
-      background-color: #9b57f2;
+      background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
       color: white;
+      transform-origin: center;
     }
 
     .feed-button-purple:hover {
-      background-color: #803bd7;
+      transform: translateY(-2px) scale(1.02);
+      box-shadow: 0 6px 24px rgba(124, 92, 255, 0.2);
     }
 
     .feed-button-yellow {
-      background-color: #f9eccc;
-      color: #2b2538;
+      background: var(--surface);
+      color: var(--accent-primary);
+      border: 2px solid transparent;
+      background-image: linear-gradient(var(--surface), var(--surface)), 
+                        linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+      background-origin: border-box;
+      background-clip: padding-box, border-box;
     }
 
     .feed-button-yellow:hover {
-      background-color: #e7daaa;
+      transform: translateY(-2px) scale(1.02);
+      box-shadow: 0 6px 24px rgba(74, 158, 255, 0.2);
     }
 
     .modal {
       display: none;
       position: fixed;
       z-index: 1000;
-      top: 0; left: 0;
+      top: 0;
+      left: 0;
       width: 100%;
       height: 100%;
-      background-color: rgba(0, 0, 0, 0.6);
+      background-color: rgba(45, 55, 72, 0.7);
       align-items: center;
       justify-content: center;
+      backdrop-filter: blur(8px);
+      padding: 20px;
+    }
+
+    @keyframes modalFade {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
     }
 
     .modal-content {
-      background-color: #fff;
-      color: #222;
-      padding: 30px;
-      border-radius: 12px;
-      width: 90%;
+      background: var(--surface);
+      color: var(--text-primary);
+      padding: clamp(20px, 4vw, 40px);
+      border-radius: clamp(16px, 3vw, 24px);
+      width: 100%;
       max-width: 450px;
       position: relative;
+      box-shadow: 0 8px 32px rgba(124, 92, 255, 0.15);
+      border: 1px solid var(--border);
+    }
+
+    .modal-content:hover {
+      transform: translateY(-2px);
     }
 
     .modal-content h3 {
-      margin-bottom: 20px;
-      font-size: 1.5em;
+      margin: 0 0 24px 0;
+      font-size: clamp(1.3rem, 3vw, 1.8rem);
+      font-weight: 700;
+      color: var(--text-primary);
     }
 
     .modal-content input,
-    .modal-content select,
-    .modal-content textarea {
+    .modal-content select {
       width: 100%;
-      padding: 10px;
+      padding: clamp(10px, 2vw, 16px);
       margin: 8px 0;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-      font-family: inherit;
+      border-radius: clamp(8px, 2vw, 12px);
+      border: 1px solid var(--border);
+      font-size: clamp(0.9rem, 2vw, 1rem);
+    }
+
+    .modal-content input:focus,
+    .modal-content select:focus {
+      outline: none;
+      border-color: var(--accent-primary);
+      box-shadow: 0 0 0 3px rgba(124, 92, 255, 0.1);
     }
 
     .modal-content button {
-      margin-top: 12px;
       width: 100%;
-      background-color: #9b57f2;
+      padding: 12px;
+      margin-top: 24px;
+      background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
       color: white;
-      padding: 10px;
       border: none;
-      border-radius: 8px;
-      font-weight: bold;
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 1em;
       cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .modal-content button:hover {
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-md);
     }
 
     .close {
       position: absolute;
-      top: 12px;
-      right: 16px;
+      top: 16px;
+      right: 20px;
       font-size: 1.5em;
-      color: #888;
+      color: var(--text-secondary);
       cursor: pointer;
+      transition: color 0.2s ease;
     }
 
     .close:hover {
-      color: #222;
+      color: var(--text-primary);
     }
+
     select:invalid {
-  		color: #888; /* gray color for the placeholder */
-	}
-	
-	select option {
-	  color: #000; /* normal text color for options */
-	}
-	
-	select option:disabled {
-	  color: #888; /* ensure placeholder stays gray in dropdown too */
-	}
-	
-	input::placeholder,
-	textarea::placeholder {
-	  color: #888; /* match select placeholder */
-	  opacity: 1;  /* remove transparency differences between browsers */
-	}
-	
-		#signupError {
-	  color: #d33;
-	  font-weight: bold;
-	  margin-bottom: 10px;
-	  display: none;
-	  font-size: 0.95em;
-	}
-	
-	.field-error {
-  color: #d33;
-  font-size: 0.85em;
-  margin-top: 4px;
-  margin-bottom: -4px;
-  text-align: left;
-  display: none;
-}
-	
-    
+      color: var(--text-secondary);
+    }
+
+    select option {
+      color: var(--text-primary);
+    }
+
+    select option:disabled {
+      color: var(--text-secondary);
+    }
+
+    input::placeholder {
+      color: var(--text-secondary);
+      opacity: 1;
+    }
+
+    #signupError {
+      color: #e53e3e;
+      font-weight: 500;
+      margin-bottom: 16px;
+      display: none;
+      font-size: 0.95em;
+      background: #fff5f5;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid #feb2b2;
+    }
+
+    .field-error {
+      color: #e53e3e;
+      font-size: 0.85em;
+      margin-top: 4px;
+      margin-bottom: 4px;
+      text-align: left;
+      display: none;
+    }
+
+    /* Extra Small Devices (phones) */
+    @media (max-width: 480px) {
+      .feed-landing-logo {
+        height: 300px;
+      }
+
+      .feed-auth-buttons {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .feed-button-purple,
+      .feed-button-yellow {
+        max-width: 100%;
+      }
+
+      body {
+        padding: 10px;
+      }
+    }
+
+    /* Small Devices (large phones, small tablets) */
+    @media (min-width: 481px) and (max-width: 768px) {
+      .feed-landing-logo {
+        height: 400px;
+      }
+    }
+
+    /* Medium Devices (tablets, small laptops) */
+    @media (min-width: 769px) and (max-width: 1024px) {
+      .feed-landing-logo {
+        height: 450px;
+      }
+    }
+
+    /* Large Devices (large laptops and desktops) */
+    @media (min-width: 1025px) {
+      .content-wrapper {
+        padding: 40px;
+      }
+    }
+
+    /* Handle very tall screens */
+    @media (min-height: 1000px) {
+      .feed-landing-logo {
+        height: min(600px, 50vh);
+      }
+    }
+
+    /* Handle ultra-wide screens */
+    @media (min-width: 1400px) {
+      .content-wrapper {
+        max-width: 1400px;
+      }
+    }
+
+    /* Handle device orientation */
+    @media (orientation: landscape) and (max-height: 600px) {
+      .feed-landing-logo {
+        height: min(300px, 60vh);
+      }
+
+      body {
+        padding: 10px;
+      }
+    }
+
+    /* Ensure text remains readable on very small screens */
+    @media (max-width: 320px) {
+      h2 {
+        font-size: 1.5rem;
+      }
+
+      .feed-button-purple,
+      .feed-button-yellow {
+        padding: 10px 20px;
+        font-size: 0.9rem;
+      }
+    }
+
+    /* Reduce motion if user prefers it */
+    @media (prefers-reduced-motion: reduce) {
+      .feed-landing-logo,
+      .content-wrapper,
+      h2 {
+        animation: none;
+      }
+
+      .feed-landing-logo:hover,
+      .feed-button-purple:hover,
+      .feed-button-yellow:hover {
+        transform: none;
+      }
+    }
   </style>
 </head>
 <body>
+  <div class="content-wrapper">
+    <img src="images/transparentlogo.png" alt="EchoLoop Logo" class="feed-landing-logo" />
+    <h2>Connecting DJs and events</h2>
 
-  <img src="images/indexlogoecho.png" alt="EchoLoop Logo" class="feed-landing-logo" />
-  <h2>Connecting DJs and events</h2>
-
-  <div class="feed-auth-buttons">
-    <button class="feed-button-purple" onclick="openModal('loginModal')">Log in</button>
-    <button class="feed-button-yellow" onclick="openModal('signupModal')">Sign up</button>
+    <div class="feed-auth-buttons">
+      <button class="feed-button-purple" onclick="openModal('loginModal')">Log in</button>
+      <button class="feed-button-yellow" onclick="openModal('signupModal')">Sign up</button>
+    </div>
   </div>
 
   <!-- Login Modal -->
@@ -195,22 +444,18 @@
       <h3>Sign Up</h3>
       <div id="signupError"></div>
       <div id="signupUsernameError" class="field-error"></div>
-	<input type="text" id="signupUsername" placeholder="Username" />
-	
-	<div id="signupPasswordError" class="field-error"></div>
-	<input type="password" id="signupPassword" placeholder="Password" />
-	
-	<div id="signupRoleError" class="field-error"></div>
-	<select id="signupRole" required>
-	  <option value="" disabled selected>You are...</option>
-	  <option value="DJ">DJ</option>
-	  <option value="Event Community">Event Community</option>
-	</select>
+      <input type="text" id="signupUsername" placeholder="Username" />
+      
+      <div id="signupPasswordError" class="field-error"></div>
+      <input type="password" id="signupPassword" placeholder="Password" />
+      
+      <div id="signupRoleError" class="field-error"></div>
+      <select id="signupRole" required>
+        <option value="" disabled selected>You are...</option>
+        <option value="DJ">DJ</option>
+        <option value="Event Community">Event Community</option>
+      </select>
 
-
-      <textarea id="signupEvents" placeholder="Upcoming Events (one per line)" rows="3"></textarea>
-      <textarea id="signupLocations" placeholder="Locations (e.g. Paris, Miami)" rows="2"></textarea>
-      <textarea id="signupGenres" placeholder="Genres Preferred (e.g. House, Techno)" rows="2"></textarea>
       <button onclick="signup()">Sign up</button>
     </div>
   </div>
@@ -260,7 +505,6 @@
       });
     }
 
-
     function signup() {
     	  // Clear old errors
     	  document.querySelectorAll('.field-error').forEach(el => el.style.display = 'none');
@@ -295,14 +539,10 @@
     	  if (hasError) return;
 
     	  // Continue with signup
-    	  const events = document.getElementById("signupEvents").value;
-    	  const locations = document.getElementById("signupLocations").value;
-    	  const genres = document.getElementById("signupGenres").value;
-
     	  fetch("http://localhost:8080/api/users/signup", {
     	    method: "POST",
     	    headers: { "Content-Type": "application/json" },
-    	    body: JSON.stringify({ username, password, role, events, locations, genres })
+    	    body: JSON.stringify({ username, password, role })
     	  })
     	  .then(response => {
     	    if (!response.ok) throw new Error("Signup failed");
@@ -310,11 +550,9 @@
     	    closeModal('signupModal');
     	  })
     	  .catch(err => {
-    	    alert(err.message); // Or you can show a generic message below the form if you prefer
+    	    alert(err.message);
     	  });
     	}
-
-
 
   </script>
 

@@ -5,6 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Opportunities - EchoLoop</title>
   <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="css/notifications.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <script src="/webjars/sockjs-client/1.5.1/sockjs.min.js"></script>
+  <script src="/webjars/stomp-websocket/2.3.4/stomp.min.js"></script>
+  <script src="/js/notifications.js"></script>
+  <script src="/js/common.js"></script>
   <script src="script.js" defer></script>
   <script src="search.js" defer></script>
   <style>/* Opportunities Container */
@@ -90,26 +97,12 @@
     </style>
 </head>
 <body>
-  <!-- Navbar -->
-  <nav class="feed-navbar">
-    <a href="feed.html" class="feed-logo">
-      <img src="images/logoecho.png" alt="EchoLoop Logo" class="feed-logo-img" />
-    </a>
-    <div class="feed-nav-links">
-      <a href="suggestions.html">Suggestions</a>
-      <a href="create_post.html">Create Post</a>
-      <a href="opportunities.html" class="active">Opportunities</a>
-      <a id="createEventLink" href="create_event.html" style="display: none;">Create Event</a>
-      <a href="my_applications.html">My Applications</a>
-      <a href="#" onclick="goToAccount()">Account</a>
-    </div>
-  </nav>
+  <!-- Navbar will be injected by common.js -->
 
-<div class="feed-search-bar-wrapper">
-  <input type="text" id="searchInput" placeholder="Search DJs…" class="feed-search-bar" onkeypress="handleSearchKey(event)" />
-</div>
-<div id="searchResults" class="search-results-container"></div>
-
+  <div class="feed-search-bar-wrapper">
+    <input type="text" id="searchInput" placeholder="Search for DJs, Event Communities, or Events..." class="feed-search-bar" onkeypress="handleSearchKey(event)" />
+  </div>
+  <div id="searchResults" class="search-results-container"></div>
 
   <!-- Opportunities -->
   <main class="feed-opportunities-container" id="opportunitiesContainer"></main>
@@ -155,6 +148,7 @@
                 div.innerHTML = `
                   <h3><a href="event_detail.html?eventId=${event.id}" style="text-decoration: none; color: inherit;">${event.title}</a></h3>
                   <p>${event.location}<br>${event.genre}<br>${event.eventDate}</p>
+                  <p><strong>Event Community:</strong> <a href="community_profile.html?id=${event.communityId}">${event.communityName}</a></p>
                   <button class="feed-button-dark" onclick="applyToEvent(${event.id}, this)" ${hasApplied ? "disabled" : ""}>
                     ${hasApplied ? "Applied" : "Apply"}
                   </button>
@@ -196,8 +190,5 @@
       window.location.href = `event_detail.html?eventId=${eventId}`;
     }
   </script>
-  
-  
-
 </body>
 </html>

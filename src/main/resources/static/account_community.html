@@ -5,7 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Event Planner Profile - EchoLoop</title>
   <link rel="stylesheet" href="style.css" />
-  <script src="script.js" defer></script>
+  <link rel="stylesheet" href="css/notifications.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <script src="/webjars/sockjs-client/1.5.1/sockjs.min.js"></script>
+  <script src="/webjars/stomp-websocket/2.3.4/stomp.min.js"></script>
+  <script src="/js/notifications.js"></script>
+  <script src="/js/common.js"></script>
   <style>
     .feed-account-container {
       max-width: 1000px;
@@ -89,6 +95,77 @@
     li {
       margin-bottom: 6px;
     }
+
+    .event-card {
+      position: relative;
+      transition: all 0.3s ease;
+    }
+
+    .event-card.highlight {
+      outline: 2px solid var(--accent-primary);
+      border-radius: 12px;
+      animation: highlight-pulse 2s ease-out;
+    }
+
+    @keyframes highlight-pulse {
+      0% {
+        outline-color: var(--accent-primary);
+        outline-offset: 0px;
+      }
+      50% {
+        outline-color: rgba(124, 92, 255, 0.5);
+        outline-offset: 4px;
+      }
+      100% {
+        outline-color: var(--accent-primary);
+        outline-offset: 0px;
+      }
+    }
+
+    .event-card.highlight::before {
+      content: '';
+      position: absolute;
+      left: -2px;
+      top: 0;
+      bottom: 0;
+      width: 4px;
+      background-color: var(--accent-primary);
+      border-radius: 4px 0 0 4px;
+      animation: highlight-bar 2s forwards;
+    }
+
+    @keyframes highlight-bar {
+      0%, 80% {
+        opacity: 1;
+      }
+      100% {
+        opacity: 0;
+      }
+    }
+
+    /* Add styles for application highlight */
+    .application-item {
+      transition: all 0.3s ease;
+      padding: 8px;
+      border-radius: 8px;
+    }
+
+    .application-item.highlight {
+      background-color: rgba(124, 92, 255, 0.1);
+      animation: application-highlight 2s ease-out;
+    }
+
+    @keyframes application-highlight {
+      0% {
+        background-color: rgba(124, 92, 255, 0.1);
+      }
+      50% {
+        background-color: rgba(124, 92, 255, 0.2);
+      }
+      100% {
+        background-color: transparent;
+      }
+    }
   </style>
 </head>
 <body>
@@ -155,12 +232,8 @@
         window.location.href = "index.html";
       };
 
-      fetch(`/api/users/${userIdToFetch}`)
-        .then(res => res.json())
-        .then(user => {
-          document.getElementById("usernameDisplay").textContent = user.username;
-          document.getElementById("roleDisplay").textContent = user.role;
-        });
+      document.getElementById("usernameDisplay").textContent = loggedInUser.username;
+      document.getElementById("roleDisplay").textContent = loggedInUser.role;
 
       fetch(`/api/events/by-user/${userIdToFetch}`)
         .then(res => res.json())
@@ -181,8 +254,11 @@
           performingSection.innerHTML = "";
 
           events.forEach(event => {
-            const line = document.createElement("div");
-            line.innerHTML = `
+            // Create event card with ID
+            const eventCard = document.createElement("div");
+            eventCard.id = `event-${event.id}`;
+            eventCard.className = 'event-card';
+            eventCard.innerHTML = `
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                 <a href="event_detail.html?eventId=${event.id}">${event.title} — ${event.eventDate} (${event.location})</a>
                 ${isViewingOwnProfile ? `
@@ -192,7 +268,7 @@
                   </div>
                 ` : ''}
               </div>`;
-            eventsContainer.appendChild(line);
+            eventsContainer.appendChild(eventCard);
 
             if (isViewingOwnProfile) {
               fetch(`/api/events/${event.id}/applicants?requesterId=${userIdToFetch}`)
@@ -200,10 +276,14 @@
                 .then(applicants => {
                   if (applicants.length > 0) {
                     const block = document.createElement("div");
+                    block.className = 'applications-block';
                     block.innerHTML = `<strong>${event.title}</strong>`;
                     const list = document.createElement("ul");
+                    
                     applicants.forEach(dj => {
                       const li = document.createElement("li");
+                      li.className = 'application-item';
+                      li.id = `application-${event.id}-${dj.id}`;
                       li.innerHTML = `
                         <a href="profile.html?id=${dj.id}"><strong>${dj.username}</strong></a> (${dj.genres || "no genres"})
                         <span class="btn-container">
@@ -212,6 +292,7 @@
                         </span>`;
                       list.appendChild(li);
                     });
+                    
                     block.appendChild(list);
                     applicationsContainer.appendChild(block);
                   }
@@ -225,79 +306,109 @@
               performingSection.appendChild(performingBlock);
             }
           });
+
+          // Handle hash-based navigation after content is loaded
+          const hash = window.location.hash;
+          if (hash) {
+            // Check if it's an event hash
+            if (hash.startsWith('#event-')) {
+              const eventId = hash.replace('#event-', '');
+              const eventElement = document.getElementById(`event-${eventId}`);
+              if (eventElement) {
+                eventElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                eventElement.classList.add('highlight');
+                setTimeout(() => {
+                  eventElement.classList.remove('highlight');
+                }, 2000);
+              }
+            }
+            // Check if it's an application hash (format: #application-eventId-djId)
+            else if (hash.startsWith('#application-')) {
+              // Wait a bit for the applications to load
+              setTimeout(() => {
+                const applicationElement = document.querySelector(hash);
+                if (applicationElement) {
+                  applicationElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  applicationElement.classList.add('highlight');
+                  setTimeout(() => {
+                    applicationElement.classList.remove('highlight');
+                  }, 2000);
+                }
+              }, 500); // Give time for the nested fetch to complete
+            }
+          }
         });
     });
 
     function acceptDj(eventId, djId, clickedButton) {
-  const loggedInUser = JSON.parse(localStorage.getItem("echoloopUser"));
-  console.log('Accepting DJ with params:', { eventId, djId, requesterId: loggedInUser.id });
+      const loggedInUser = JSON.parse(localStorage.getItem("echoloopUser"));
+      console.log('Accepting DJ with params:', { eventId, djId, requesterId: loggedInUser.id });
 
-  fetch(`/api/events/${eventId}/accept/${djId}?requesterId=${loggedInUser.id}`, {
-    method: "POST",
-    headers: {
-      'Content-Type': 'application/json'
-    }
-  })
-    .then(response => {
-      if (!response.ok) {
-        return response.text().then(text => {
-          throw new Error(`Failed to accept DJ: ${text}`);
+      fetch(`/api/events/${eventId}/accept/${djId}?requesterId=${loggedInUser.id}`, {
+        method: "POST",
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+        .then(response => {
+          if (!response.ok) {
+            return response.text().then(text => {
+              throw new Error(`Failed to accept DJ: ${text}`);
+            });
+          }
+
+          const status = document.createElement("span");
+          status.textContent = "Accepted ✅";
+          status.style.color = "green";
+
+          const btnContainer = clickedButton.closest(".btn-container");
+          if (btnContainer) {
+            btnContainer.innerHTML = "";
+            btnContainer.appendChild(status);
+          } else {
+            console.warn("Button container not found for accepted DJ.");
+          }
+        })
+        .catch(error => {
+          console.error('Error details:', error);
+          alert('Failed to accept DJ. Please try again.');
         });
-      }
-
-      const status = document.createElement("span");
-      status.textContent = "Accepted ✅";
-      status.style.color = "green";
-
-      const btnContainer = clickedButton.closest(".btn-container");
-      if (btnContainer) {
-        btnContainer.innerHTML = "";
-        btnContainer.appendChild(status);
-      } else {
-        console.warn("Button container not found for accepted DJ.");
-      }
-    })
-    .catch(error => {
-      console.error('Error details:', error);
-      alert('Failed to accept DJ. Please try again.');
-    });
-}
-
-function rejectDj(eventId, djId, clickedButton) {
-  const loggedInUser = JSON.parse(localStorage.getItem("echoloopUser"));
-  console.log('Rejecting DJ with params:', { eventId, djId, requesterId: loggedInUser.id });
-
-  fetch(`/api/events/${eventId}/reject/${djId}?requesterId=${loggedInUser.id}`, {
-    method: "POST",
-    headers: {
-      'Content-Type': 'application/json'
     }
-  })
-    .then(response => {
-      if (!response.ok) {
-        return response.text().then(text => {
-          throw new Error(`Failed to reject DJ: ${text}`);
+
+    function rejectDj(eventId, djId, clickedButton) {
+      const loggedInUser = JSON.parse(localStorage.getItem("echoloopUser"));
+      console.log('Rejecting DJ with params:', { eventId, djId, requesterId: loggedInUser.id });
+
+      fetch(`/api/events/${eventId}/reject/${djId}?requesterId=${loggedInUser.id}`, {
+        method: "POST",
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+        .then(response => {
+          if (!response.ok) {
+            return response.text().then(text => {
+              throw new Error(`Failed to reject DJ: ${text}`);
+            });
+          }
+
+          const status = document.createElement("span");
+          status.textContent = "Rejected ❌";
+          status.style.color = "red";
+
+          const btnContainer = clickedButton.closest(".btn-container");
+          if (btnContainer) {
+            btnContainer.innerHTML = "";
+            btnContainer.appendChild(status);
+          } else {
+            console.warn("Button container not found for rejected DJ.");
+          }
+        })
+        .catch(error => {
+          console.error('Error details:', error);
+          alert('Failed to reject DJ. Please try again.');
         });
-      }
-
-      const status = document.createElement("span");
-      status.textContent = "Rejected ❌";
-      status.style.color = "red";
-
-      const btnContainer = clickedButton.closest(".btn-container");
-      if (btnContainer) {
-        btnContainer.innerHTML = "";
-        btnContainer.appendChild(status);
-      } else {
-        console.warn("Button container not found for rejected DJ.");
-      }
-    })
-    .catch(error => {
-      console.error('Error details:', error);
-      alert('Failed to reject DJ. Please try again.');
-    });
-}
-
+    }
 
     function deleteEvent(eventId) {
       if (!confirm('Are you sure you want to delete this event? This action cannot be undone.')) {

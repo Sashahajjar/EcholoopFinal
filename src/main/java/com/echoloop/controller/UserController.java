@@ -9,16 +9,28 @@ import com.echoloop.repository.EventRepository;
 import com.echoloop.repository.UserRepository;
 import com.echoloop.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.security.crypto.bcrypt.BCrypt;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.UUID;
+import java.nio.file.Path;
+import jakarta.annotation.PostConstruct;
 
 @RestController
 @RequestMapping("/api/users")
 @CrossOrigin(origins = "*")
 public class UserController {
+
+    @Value("${file.upload-dir:uploads}")
+    private String uploadDir;
 
     @Autowired
     private EventRepository eventRepository;
@@ -28,6 +40,15 @@ public class UserController {
 
     @Autowired
     private UserService userService;
+
+    @PostConstruct
+    public void init() {
+        try {
+            Files.createDirectories(Paths.get(uploadDir));
+        } catch (IOException e) {
+            throw new RuntimeException("Could not create upload directory!", e);
+        }
+    }
 
     @PostMapping("/signup")
     public ResponseEntity<?> signup(@RequestBody SignupRequest request) {
@@ -39,10 +60,7 @@ public class UserController {
             User newUser = new User(
                 request.getUsername(),
                 request.getPassword(),
-                request.getRole(),
-                request.getEvents(),
-                request.getLocations(),
-                request.getGenres()
+                request.getRole()
             );
             userRepository.save(newUser);
             return ResponseEntity.ok("User registered successfully");
@@ -109,14 +127,37 @@ public class UserController {
 
     @GetMapping("/search")
     public ResponseEntity<Map<String, List<UserDTO>>> searchUsers(@RequestParam String query) {
-        List<User> djs = userRepository.findByUsernameContainingIgnoreCaseAndRoleIgnoreCase(query, "DJ");
-        List<User> communities = userRepository.findByUsernameContainingIgnoreCaseAndRoleIgnoreCase(query, "event community");
+        // Split query into words for better matching
+        String[] searchTerms = query.toLowerCase().split("\\s+");
+        
+        // Get all users
+        List<User> allUsers = userRepository.findAll();
+        
+        // Filter users based on search terms
+        List<User> djs = allUsers.stream()
+            .filter(user -> "dj".equalsIgnoreCase(user.getRole()))
+            .filter(user -> matchesSearchTerms(user, searchTerms))
+            .collect(Collectors.toList());
+        
+        List<User> communities = allUsers.stream()
+            .filter(user -> "event community".equalsIgnoreCase(user.getRole()))
+            .filter(user -> matchesSearchTerms(user, searchTerms))
+            .collect(Collectors.toList());
 
         Map<String, List<UserDTO>> result = new HashMap<>();
         result.put("djs", djs.stream().map(UserDTO::fromEntity).toList());
         result.put("communities", communities.stream().map(UserDTO::fromEntity).toList());
 
         return ResponseEntity.ok(result);
+    }
+
+    private boolean matchesSearchTerms(User user, String[] searchTerms) {
+        String userText = (user.getUsername() + " " + 
+                          (user.getGenres() != null ? user.getGenres() : "") + " " +
+                          (user.getLocations() != null ? user.getLocations() : "")).toLowerCase();
+        
+        return Arrays.stream(searchTerms)
+            .allMatch(term -> userText.contains(term));
     }
 
     @GetMapping("/{id}")
@@ -141,9 +182,11 @@ public class UserController {
 
         for (Event e : allEvents) {
             if (e.getPerformingDjs().contains(dj)) {
-                result.add(new EventApplicationStatusDTO(e.getTitle(), "Accepted"));
+                result.add(new EventApplicationStatusDTO(e.getTitle(), "Accepted", e.getId()));
             } else if (e.getApplicants().contains(dj)) {
-                result.add(new EventApplicationStatusDTO(e.getTitle(), "Pending"));
+                result.add(new EventApplicationStatusDTO(e.getTitle(), "Pending", e.getId()));
+            } else if (e.getRejectedApplicants().contains(dj)) {
+                result.add(new EventApplicationStatusDTO(e.getTitle(), "Rejected", e.getId()));
             }
         }
 
@@ -152,7 +195,12 @@ public class UserController {
 
     @GetMapping("/{id}/profile")
     public ResponseEntity<UserDTO> getDjProfile(@PathVariable Long id) {
-        return ResponseEntity.ok(userService.getDjProfile(id));
+        try {
+            UserDTO profile = userService.getDjProfile(id);
+            return ResponseEntity.ok(profile);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @PutMapping("/{id}/profile")
@@ -166,10 +214,80 @@ public class UserController {
         userService.updateCommunityProfile(id, dto);
         return ResponseEntity.ok().build();
     }
-@PutMapping("/{id}")
-public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody UserDTO userDto) {
-    userService.updateUser(id, userDto);
-    return ResponseEntity.ok().build();
-}
+
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody UserDTO userDto) {
+        userService.updateUser(id, userDto);
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/by-username/{username}")
+    public ResponseEntity<UserDTO> getUserByUsername(@PathVariable String username) {
+        return userRepository.findByUsername(username)
+            .map(UserDTO::fromEntity)
+            .map(ResponseEntity::ok)
+            .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PostMapping("/{id}/profile-picture")
+    public ResponseEntity<?> updateProfilePicture(@PathVariable Long id, @RequestParam MultipartFile image) {
+        try {
+            User user = userRepository.findById(id).orElseThrow();
+
+            if (image != null && !image.isEmpty()) {
+                String fileName = UUID.randomUUID() + "_" + image.getOriginalFilename();
+                Path uploadPath = Paths.get(uploadDir);
+                Files.createDirectories(uploadPath);
+                Files.copy(image.getInputStream(), uploadPath.resolve(fileName));
+                user.setProfilePicture("/uploads/" + fileName);
+                userRepository.save(user);
+                return ResponseEntity.ok(user.getProfilePicture());
+            }
+            return ResponseEntity.badRequest().body("No image provided");
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Error uploading profile picture");
+        }
+    }
+
+    @GetMapping("/security-demo")
+    public Map<String, String> demonstrateSecurity() {
+        String testPassword = "myPassword123";
+        String hashedPassword = BCrypt.hashpw(testPassword, BCrypt.gensalt());
+        
+        Map<String, String> demo = new HashMap<>();
+        demo.put("originalPassword", testPassword);
+        demo.put("hashedPassword", hashedPassword);
+        demo.put("passwordMatch", String.valueOf(BCrypt.checkpw(testPassword, hashedPassword)));
+        
+        return demo;
+    }
+
+    // Add this new endpoint for file upload security demonstration
+    @PostMapping("/security-demo/upload")
+    public Map<String, String> demonstrateFileUploadSecurity(@RequestParam MultipartFile file) {
+        Map<String, String> result = new HashMap<>();
+        
+        // Check file size (5MB limit)
+        if (file.getSize() > 5_000_000) {
+            result.put("status", "error");
+            result.put("reason", "File too large. Maximum size is 5MB");
+            return result;
+        }
+        
+        // Check file type
+        String contentType = file.getContentType();
+        if (contentType == null || (!contentType.equals("image/jpeg") && !contentType.equals("image/png"))) {
+            result.put("status", "error");
+            result.put("reason", "Invalid file type. Only JPEG and PNG allowed");
+            return result;
+        }
+        
+        result.put("status", "success");
+        result.put("fileName", file.getOriginalFilename());
+        result.put("fileSize", String.valueOf(file.getSize()));
+        result.put("fileType", contentType);
+        
+        return result;
+    }
 
 }

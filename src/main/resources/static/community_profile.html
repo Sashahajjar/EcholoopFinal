@@ -5,8 +5,35 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Community Profile - EchoLoop</title>
   <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="css/notifications.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <script src="/webjars/sockjs-client/1.5.1/sockjs.min.js"></script>
+  <script src="/webjars/stomp-websocket/2.3.4/stomp.min.js"></script>
+  <script src="/js/notifications.js"></script>
+  <script src="/js/common.js"></script>
   <script src="script.js" defer></script>
   <style>
+    :root {
+      --bg-primary: #f8f6ff;
+      --bg-secondary: #e8f3ff;
+      --accent-primary: #7c5cff;
+      --accent-secondary: #4a9eff;
+      --accent-tertiary: #5a6acf;
+      --text-primary: #2d3748;
+      --text-secondary: #718096;
+      --success: #48bb78;
+      --surface: #ffffff;
+      --border: rgba(226, 232, 240, 0.8);
+      --shadow-sm: 0 2px 12px rgba(124, 92, 255, 0.06);
+      --shadow-md: 0 4px 20px rgba(124, 92, 255, 0.08);
+    }
+  
+    body {
+      font-family: 'Inter', sans-serif;
+      color: var(--text-primary);
+    }
+  
     .feed-account-container {
       max-width: 1000px;
       margin: 40px auto;
@@ -21,30 +48,57 @@
       border: 1px solid var(--border);
     }
   
+    .feed-profile-header-top {
+      display: flex;
+      gap: 24px;
+      margin-bottom: 32px;
+    }
+  
+    .feed-profile-avatar-section {
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+  
     .feed-profile-img {
       width: 120px;
       height: 120px;
       border-radius: 50%;
       object-fit: cover;
       border: 3px solid var(--accent-secondary);
-      margin-bottom: 16px;
+    }
+  
+    .feed-profile-info-section {
+      flex: 1;
+      min-width: 0;
     }
   
     .feed-profile-header {
       display: flex;
       justify-content: space-between;
-      align-items: center;
+      align-items: flex-start;
+      gap: 16px;
       margin-bottom: 24px;
     }
   
-    .feed-profile-section {
-      margin-bottom: 32px;
+    .feed-profile-header-left h2 {
+      margin: 0 0 8px 0;
+      font-size: 1.5rem;
+      color: var(--text-primary);
     }
   
-    .feed-profile-section h4 {
-      margin-bottom: 8px;
-      font-size: 1.1em;
-      color: var(--accent-primary);
+    .feed-profile-header-left p {
+      margin: 0;
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+    }
+  
+    .feed-profile-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
     }
   
     .feed-button {
@@ -55,172 +109,269 @@
       color: white;
       cursor: pointer;
       font-weight: 600;
-      transition: background 0.2s;
+      transition: opacity 0.2s;
+      white-space: nowrap;
     }
   
     .feed-button:hover {
-      background: linear-gradient(135deg, var(--accent-secondary), var(--accent-primary));
-    }
-  
-    .feed-input,
-    .feed-textarea {
-      width: 100%;
-      padding: 10px;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      margin-top: 8px;
-      margin-bottom: 12px;
+      opacity: 0.9;
     }
   
     .feed-profile-stats {
       display: flex;
-      justify-content: space-around;
-      background-color: var(--surface);
-      padding: 16px;
+      gap: 32px;
+      background-color: var(--bg-primary);
+      padding: 16px 24px;
       border-radius: 12px;
-      margin-bottom: 32px;
-      border: 1px solid var(--border);
+      margin: 24px 0;
+    }
+  
+    .feed-stat {
+      text-align: center;
     }
   
     .feed-stat h4 {
       margin: 0;
-      font-size: 1em;
-      color: var(--accent-primary);
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      font-weight: 500;
     }
   
     .feed-stat p {
       margin: 4px 0 0;
-      font-weight: 500;
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+  
+    .feed-profile-section {
+      margin-bottom: 32px;
+    }
+  
+    .feed-profile-section h4 {
+      margin: 0 0 16px 0;
+      font-size: 1.1rem;
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+  
+    .feed-profile-section p {
+      margin: 0 0 16px 0;
+      color: var(--text-secondary);
+      line-height: 1.5;
     }
   
     .feed-lists-section {
-      display: flex;
-      gap: 40px;
-      flex-wrap: wrap;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 24px;
     }
   
     .feed-following-list,
     .feed-followers-list {
-      flex: 1;
-      min-width: 300px;
+      background: var(--bg-primary);
+      padding: 20px;
+      border-radius: 12px;
     }
   
     ul {
-      padding-left: 20px;
+      list-style: none;
+      padding: 0;
+      margin: 0;
     }
   
     li {
-      margin-bottom: 8px;
+      margin-bottom: 12px;
+      padding: 8px;
+      background: var(--surface);
+      border-radius: 8px;
+      border: 1px solid var(--border);
     }
   
     a {
       text-decoration: none;
       color: var(--accent-primary);
+      transition: color 0.2s;
     }
   
     a:hover {
-      text-decoration: underline;
+      color: var(--accent-secondary);
     }
   
     .feed-post,
     .feed-event {
       border: 1px solid var(--border);
       border-radius: 12px;
-      padding: 16px;
+      padding: 20px;
       margin-bottom: 16px;
       background-color: var(--surface);
+      box-shadow: var(--shadow-sm);
     }
   
     .feed-post-actions {
-      margin-top: 10px;
+      margin-top: 16px;
       display: flex;
       gap: 8px;
     }
   
     .feed-no-activity {
       text-align: center;
-      color: var(--text-muted);
+      padding: 32px;
+      color: var(--text-secondary);
+      background: var(--bg-primary);
+      border-radius: 12px;
       font-style: italic;
     }
-  </style>
   
+    .feed-input,
+    .feed-textarea {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin-bottom: 12px;
+      font-family: inherit;
+      font-size: 0.95rem;
+      color: var(--text-primary);
+      background: var(--bg-primary);
+      resize: vertical;
+    }
+  
+    .feed-input:focus,
+    .feed-textarea:focus {
+      outline: none;
+      border-color: var(--accent-primary);
+    }
+  
+    .feed-profile-buttons {
+      display: flex;
+      gap: 8px;
+      flex-direction: column;
+      width: 100%;
+    }
+    
+    .feed-profile-buttons .feed-button {
+      width: 100%;
+    }
+    
+    @media (max-width: 768px) {
+      .feed-profile-header-top {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+      }
+  
+      .feed-profile-header {
+        flex-direction: column;
+        align-items: center;
+      }
+  
+      .feed-profile-actions {
+        justify-content: center;
+        margin-top: 16px;
+      }
+  
+      .feed-profile-stats {
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+      }
+  
+      .feed-lists-section {
+        grid-template-columns: 1fr;
+      }
+  
+      .feed-profile-buttons {
+        flex-direction: row;
+      }
+      
+      .feed-profile-buttons .feed-button {
+        flex: 1;
+      }
+    }
+  </style>
 </head>
 <body>
-  <nav class="feed-navbar">
-    <a href="feed.html" class="feed-logo">
-      <img src="images/logoecho.png" alt="EchoLoop Logo" class="feed-logo-img" />
-    </a>
-    <div class="feed-nav-links">
-      <!-- Navigation will be populated by JavaScript -->
-    </div>
-  </nav>
+  <!-- Navbar will be injected by common.js -->
 
   <main class="feed-account-container">
     <div class="feed-profile-card">
-      <img src="images/venue-profile.jpg" alt="Profile" class="feed-profile-img" />
-      <button id="followBtn" class="feed-button" style="display: none;">Follow</button>
-
-      <div class="feed-profile-details">
-        <div class="feed-profile-header">
-          <div>
-            <h2 id="communityName">Loading...</h2>
-            <p>Event Community</p>
+      <div class="feed-profile-header-top">
+        <div class="feed-profile-avatar-section">
+          <img id="profileImage" src="images/venue-profile.jpg" alt="Profile" class="feed-profile-img" />
+          <div class="feed-profile-buttons">
+            <button id="followBtn" class="feed-button" style="display: none;">Follow</button>
+            <button id="messageBtn" class="feed-button" style="display: none;" onclick="startConversation()">Message</button>
+            <input type="file" id="profilePictureInput" accept="image/*" style="display: none;">
+            <button id="uploadPictureBtn" class="feed-button" style="display: none;" onclick="document.getElementById('profilePictureInput').click()">Choose Picture</button>
+            <button id="savePictureBtn" class="feed-button" style="display: none;">Save Picture</button>
           </div>
         </div>
 
-        <div class="feed-profile-section">
-          <h4>About</h4>
-          <div id="aboutSection">
-            <p id="communityAbout">Loading...</p>
-            <button id="editAboutBtn" class="feed-button" style="display: none;">Edit</button>
-          </div>
-          <div id="aboutEditSection" style="display: none;">
-            <textarea id="aboutInput" class="feed-textarea"></textarea>
-            <button onclick="saveProfile()" class="feed-button">Save</button>
-            <button onclick="cancelEdit()" class="feed-button">Cancel</button>
-          </div>
-        </div>
-
-        <div class="feed-profile-section">
-          <h4>Location</h4>
-          <div id="locationSection">
-            <p id="communityLocation">Loading...</p>
-            <button id="editLocationBtn" class="feed-button" style="display: none;">Edit</button>
-          </div>
-          <div id="locationEditSection" style="display: none;">
-            <input type="text" id="locationInput" class="feed-input" />
-            <button onclick="saveProfile()" class="feed-button">Save</button>
-            <button onclick="cancelEdit()" class="feed-button">Cancel</button>
-          </div>
-        </div>
-
-        <div class="feed-profile-stats">
-          <div class="feed-stat">
-            <h4>Following</h4>
-            <p id="followingCount">Loading...</p>
-          </div>
-          <div class="feed-stat">
-            <h4>Followers</h4>
-            <p id="followerCount">Loading...</p>
+        <div class="feed-profile-info-section">
+          <div class="feed-profile-header">
+            <div class="feed-profile-header-left">
+              <h2 id="communityName">Loading...</h2>
+              <p>Event Community</p>
+              <div class="feed-profile-stats">
+                <div class="feed-stat">
+                  <h4>Following</h4>
+                  <p id="followingCount">Loading...</p>
+                </div>
+                <div class="feed-stat">
+                  <h4>Followers</h4>
+                  <p id="followerCount">Loading...</p>
+                </div>
+              </div>
+            </div>
+            <div class="feed-profile-header-right">
+              <div class="feed-profile-actions">
+                <button id="logoutBtn" class="feed-button" style="display: none;">Log out</button>
+                <button id="editBtn" class="feed-button" style="display: none;">Edit Profile</button>
+              </div>
+            </div>
           </div>
         </div>
+      </div>
 
-        <div class="feed-lists-section">
-          <div class="feed-profile-section feed-following-list">
-            <h4>Following List</h4>
-            <ul id="followingList"></ul>
-          </div>
-
-          <div class="feed-profile-section feed-followers-list">
-            <h4>Followers List</h4>
-            <ul id="followerList"></ul>
-          </div>
+      <div class="feed-profile-section">
+        <h4>About</h4>
+        <div id="aboutSection">
+          <p id="communityAbout">Loading...</p>
         </div>
-
-        <div class="feed-profile-section feed-activity">
-          <h4>Activity Feed</h4>
-          <div id="communityActivity">Loading...</div>
+        <div id="aboutEditSection" style="display: none;">
+          <textarea id="aboutInput" class="feed-textarea"></textarea>
         </div>
+      </div>
+
+      <div class="feed-profile-section">
+        <h4>Location</h4>
+        <div id="locationSection">
+          <p id="communityLocation">Loading...</p>
+        </div>
+        <div id="locationEditSection" style="display: none;">
+          <input type="text" id="locationInput" class="feed-input" />
+        </div>
+      </div>
+
+      <div id="editActions" class="feed-profile-actions" style="display: none;">
+        <button onclick="saveProfileEdits()" class="feed-button">Save Changes</button>
+        <button onclick="cancelEdit()" class="feed-button">Cancel</button>
+      </div>
+
+      <div class="feed-profile-section">
+        <h4>Following List</h4>
+        <ul id="followingList"></ul>
+      </div>
+
+      <div class="feed-profile-section">
+        <h4>Followers List</h4>
+        <ul id="followerList"></ul>
+      </div>
+
+      <div class="feed-profile-section">
+        <h4>Activity Feed</h4>
+        <div id="communityActivity">Loading...</div>
       </div>
     </div>
   </main>
@@ -238,9 +389,74 @@
       const isOwnProfile = loggedInUser && loggedInUser.id == communityId;
   
       if (isOwnProfile) {
-        document.getElementById('editAboutBtn').style.display = 'inline-block';
-        document.getElementById('editLocationBtn').style.display = 'inline-block';
+        document.getElementById('logoutBtn').style.display = 'inline-block';
+        document.getElementById('editBtn').style.display = 'inline-block';
         document.getElementById('followBtn').style.display = 'none';
+        document.getElementById('messageBtn').style.display = 'none';
+        document.getElementById('uploadPictureBtn').style.display = 'inline-block';
+
+        document.getElementById('logoutBtn').onclick = () => {
+          localStorage.removeItem("echoloopUser");
+          window.location.href = "index.html";
+        };
+
+        document.getElementById('editBtn').onclick = () => {
+          document.getElementById('aboutSection').style.display = 'none';
+          document.getElementById('locationSection').style.display = 'none';
+          document.getElementById('aboutEditSection').style.display = 'block';
+          document.getElementById('locationEditSection').style.display = 'block';
+          document.getElementById('editActions').style.display = 'flex';
+          document.getElementById('editBtn').style.display = 'none';
+        };
+
+        let selectedFile = null;
+
+        document.getElementById('profilePictureInput').onchange = function(e) {
+          const file = e.target.files[0];
+          if (!file) return;
+
+          selectedFile = file;
+          // Show preview
+          const reader = new FileReader();
+          reader.onload = function(e) {
+            document.getElementById('profileImage').src = e.target.result;
+            document.getElementById('savePictureBtn').style.display = 'inline-block';
+          };
+          reader.readAsDataURL(file);
+        };
+
+        document.getElementById('savePictureBtn').onclick = async function() {
+          if (!selectedFile) return;
+
+          const formData = new FormData();
+          formData.append('image', selectedFile);
+
+          try {
+            const response = await fetch(`/api/users/${loggedInUser.id}/profile-picture`, {
+              method: 'POST',
+              body: formData
+            });
+
+            if (response.ok) {
+              const profilePicUrl = await response.text();
+              document.getElementById('profileImage').src = profilePicUrl;
+              selectedFile = null;
+              document.getElementById('savePictureBtn').style.display = 'none';
+              document.getElementById('profilePictureInput').value = '';
+              alert('Profile picture updated successfully!');
+            } else {
+              throw new Error('Failed to upload profile picture');
+            }
+          } catch (error) {
+            console.error('Error:', error);
+            alert('Failed to upload profile picture. Please try again.');
+          }
+        };
+      } else {
+        document.getElementById('logoutBtn').style.display = 'none';
+        document.getElementById('editBtn').style.display = 'none';
+        document.getElementById('followBtn').style.display = 'inline-block';
+        document.getElementById('messageBtn').style.display = 'inline-block';
       }
   
       fetch(`/api/users/${communityId}/profile`)
@@ -257,19 +473,29 @@
           document.getElementById('communityLocation').textContent = community.locations || '—';
           window.originalAbout = community.about || '';
           window.originalLocation = community.locations || '';
+
+          // Update profile picture if one exists
+          if (community.profilePicture) {
+            document.getElementById('profileImage').src = community.profilePicture;
+          } else {
+            document.getElementById('profileImage').src = 'images/venue-profile.jpg';
+          }
+
           if (isOwnProfile) {
             document.getElementById('aboutInput').value = community.about || '';
             document.getElementById('locationInput').value = community.locations || '';
           }
   
-          // FOLLOW BUTTON LOGIC
-          if (!isOwnProfile && loggedInUser) {
+          if (!isOwnProfile) {
+            document.getElementById('messageBtn').onclick = () => {
+              startConversation(communityId, community.username);
+            };
+  
             fetch(`/api/users/${loggedInUser.id}/following`)
               .then(res => res.json())
               .then(following => {
                 let alreadyFollowing = following.some(u => u.id == communityId);
                 const followBtn = document.getElementById('followBtn');
-                followBtn.style.display = 'inline-block';
                 followBtn.textContent = alreadyFollowing ? 'Unfollow' : 'Follow';
   
                 followBtn.onclick = () => {
@@ -281,6 +507,7 @@
                       if (res.ok) {
                         alreadyFollowing = !alreadyFollowing;
                         followBtn.textContent = alreadyFollowing ? 'Unfollow' : 'Follow';
+                        loadFollowersAndFollowing();
                       } else {
                         alert('Follow action failed');
                       }
@@ -294,180 +521,133 @@
           }
         });
   
-      Promise.all([
-        fetch(`/api/posts/user/${communityId}`).then(res => res.json()),
-        fetch(`/api/events/by-user/${communityId}`).then(res => res.json())
-      ])
-      .then(([posts, events]) => {
-        const container = document.getElementById('communityActivity');
-        container.innerHTML = '';
-        const allItems = [];
-  
-        posts.forEach(post => {
-          allItems.push({
-            type: 'post',
-            createdAt: new Date(post.createdAt).getTime(),
-            content: post.content,
-            username: post.username,
-            imageUrl: post.imageUrl,
-            id: post.id
-          });
-        });
-  
-        events.forEach(event => {
-          allItems.push({
-            type: 'event',
-            createdAt: new Date(event.createdAt).getTime(),
-            title: event.title,
-            genre: event.genre,
-            location: event.location,
-            eventDate: event.eventDate,
-            id: event.id
-          });
-        });
-  
-        allItems.sort((a, b) => b.createdAt - a.createdAt);
-  
-        if (allItems.length === 0) {
-          container.innerHTML = '<p class="feed-no-activity">No activity yet.</p>';
-          return;
-        }
-  
-        allItems.forEach(item => {
-          const div = document.createElement('div');
-          const timestamp = new Date(item.createdAt).toLocaleString('en-US', {
-            weekday: 'short',
-            month: 'short',
-            day: 'numeric',
-            hour: 'numeric',
-            minute: '2-digit',
-            hour12: true
-          });
-  
-          if (item.type === 'post') {
-            div.className = 'feed-post';
-            const imageHTML = item.imageUrl ? `<img src="${item.imageUrl}" alt="Post image" style="max-width: 100%; border-radius: 8px;" />` : '';
-            div.innerHTML = `
-              <h4>${item.username} <small>${timestamp}</small></h4>
-              <p>${item.content}</p>
-              ${imageHTML}
-              ${isOwnProfile ? `
-                <div class="feed-post-actions">
-                  <button onclick="editPost(${item.id})" class="feed-button">Edit Post</button>
-                  <button onclick="deletePost(${item.id})" class="feed-button">Delete Post</button>
-                </div>
-              ` : ''}
-            `;
-          } else {
-            const eventDate = new Date(item.eventDate).toLocaleDateString('en-US', {
-              weekday: 'long',
-              month: 'long',
-              day: 'numeric',
-              year: 'numeric'
+      function loadFollowersAndFollowing() {
+        fetch(`/api/users/${communityId}/following`)
+          .then(res => res.json())
+          .then(users => {
+            document.getElementById('followingCount').textContent = `${users.length} following`;
+            const list = document.getElementById('followingList');
+            list.innerHTML = '';
+            users.forEach(user => {
+              const li = document.createElement('li');
+              const profileLink = user.role?.toLowerCase() === 'event community'
+                ? `community_profile.html?id=${user.id}`
+                : `profile.html?id=${user.id}`;
+              li.innerHTML = `<a href="${profileLink}">${user.username} (${user.genres || "no genres"})</a>`;
+              list.appendChild(li);
             });
-            div.className = 'feed-event';
-            div.innerHTML = `
-              <h4>
-                <a href="event_detail.html?eventId=${item.id}">${item.title}</a>
-                <small>Posted ${timestamp}</small>
-              </h4>
-              <p><strong>Genre:</strong> ${item.genre}</p>
-              <p><strong>Location:</strong> ${item.location}</p>
-              <p><strong>Event Date:</strong> ${eventDate}</p>
-              ${isOwnProfile ? `
-                <div class="feed-post-actions">
-                  <button onclick="editEvent(${item.id})" class="feed-button">Edit Event</button>
-                  <button onclick="deleteEvent(${item.id})" class="feed-button">Delete Event</button>
-                </div>
-              ` : ''}
-            `;
+          });
+  
+        fetch(`/api/users/${communityId}/followers`)
+          .then(res => res.json())
+          .then(users => {
+            document.getElementById('followerCount').textContent =
+              `${users.length} follower${users.length !== 1 ? 's' : ''}`;
+            const list = document.getElementById('followerList');
+            list.innerHTML = '';
+            users.forEach(user => {
+              const li = document.createElement('li');
+              const profileLink = user.role?.toLowerCase() === 'event community'
+                ? `community_profile.html?id=${user.id}`
+                : `profile.html?id=${user.id}`;
+              li.innerHTML = `<a href="${profileLink}">${user.username} (${user.genres || "no genres"})</a>`;
+              list.appendChild(li);
+            });
+          });
+      }
+
+      function loadUserActivity() {
+        Promise.all([
+          fetch(`/api/posts/user/${communityId}`).then(res => res.json()),
+          fetch(`/api/events/by-user/${communityId}`).then(res => res.json())
+        ])
+        .then(([posts, events]) => {
+          const container = document.getElementById('communityActivity');
+          container.innerHTML = '';
+          const allItems = [];
+  
+          posts.forEach(post => {
+            allItems.push({
+              type: 'post',
+              createdAt: new Date(post.createdAt).getTime(),
+              content: post.content,
+              username: post.username,
+              imageUrl: post.imageUrl,
+              id: post.id
+            });
+          });
+  
+          events.forEach(event => {
+            allItems.push({
+              type: 'event',
+              createdAt: new Date(event.createdAt).getTime(),
+              title: event.title,
+              genre: event.genre,
+              location: event.location,
+              eventDate: event.eventDate,
+              id: event.id
+            });
+          });
+  
+          allItems.sort((a, b) => b.createdAt - a.createdAt);
+  
+          if (allItems.length === 0) {
+            container.innerHTML = '<p class="feed-no-activity">No activity yet.</p>';
+            return;
           }
   
-          container.appendChild(div);
-        });
-      });
+          allItems.forEach(item => {
+            const div = document.createElement('div');
+            const timestamp = new Date(item.createdAt).toLocaleString();
   
-      fetch(`/api/users/${communityId}/following`)
-        .then(res => res.json())
-        .then(users => {
-          document.getElementById('followingCount').textContent = `${users.length} following`;
-          const list = document.getElementById('followingList');
-          list.innerHTML = '';
-          users.forEach(user => {
-            const li = document.createElement('li');
-            const profileLink = user.role?.toLowerCase() === 'event community'
-              ? `community_profile.html?id=${user.id}`
-              : `profile.html?id=${user.id}`;
-            li.innerHTML = `<a href="${profileLink}">${user.username}</a>`;
-            list.appendChild(li);
+            if (item.type === 'post') {
+              div.className = 'feed-post';
+              const imageHTML = item.imageUrl ? `<img src="${item.imageUrl}" alt="Post image" style="max-width: 100%; border-radius: 8px;" />` : '';
+              div.innerHTML = `
+                <h4>${item.username} <small>${timestamp}</small></h4>
+                <p>${item.content}</p>
+                ${imageHTML}
+                ${isOwnProfile ? `
+                  <div class="feed-post-actions">
+                    <button onclick="editPost(${item.id})" class="feed-button">Edit Post</button>
+                    <button onclick="deletePost(${item.id})" class="feed-button">Delete Post</button>
+                  </div>
+                ` : ''}
+              `;
+            } else {
+              const eventDate = new Date(item.eventDate).toLocaleDateString('en-US', {
+                weekday: 'long',
+                month: 'long',
+                day: 'numeric',
+                year: 'numeric'
+              });
+              div.className = 'feed-event';
+              div.innerHTML = `
+                <h4>
+                  <a href="event_detail.html?eventId=${item.id}">${item.title}</a>
+                  <small>Posted ${timestamp}</small>
+                </h4>
+                <p><strong>Genre:</strong> ${item.genre}</p>
+                <p><strong>Location:</strong> ${item.location}</p>
+                <p><strong>Event Date:</strong> ${eventDate}</p>
+                ${isOwnProfile ? `
+                  <div class="feed-post-actions">
+                    <button onclick="editEvent(${item.id})" class="feed-button">Edit Event</button>
+                    <button onclick="deleteEvent(${item.id})" class="feed-button">Delete Event</button>
+                  </div>
+                ` : ''}
+              `;
+            }
+  
+            container.appendChild(div);
           });
         });
+      }
   
-      fetch(`/api/users/${communityId}/followers`)
-        .then(res => res.json())
-        .then(users => {
-          document.getElementById('followerCount').textContent =
-            `${users.length} follower${users.length !== 1 ? 's' : ''}`;
-          const list = document.getElementById('followerList');
-          list.innerHTML = '';
-          users.forEach(user => {
-            const li = document.createElement('li');
-            const profileLink = user.role?.toLowerCase() === 'event community'
-              ? `community_profile.html?id=${user.id}`
-              : `profile.html?id=${user.id}`;
-            li.innerHTML = `<a href="${profileLink}">${user.username}</a>`;
-            list.appendChild(li);
-          });
-        });
+      loadFollowersAndFollowing();
+      loadUserActivity();
+      updateNavigationBar();
     });
-  
-    function editAbout() {
-      document.getElementById('aboutSection').style.display = 'none';
-      document.getElementById('aboutEditSection').style.display = 'block';
-    }
-  
-    function editLocation() {
-      document.getElementById('locationSection').style.display = 'none';
-      document.getElementById('locationEditSection').style.display = 'block';
-    }
-  
-    function cancelEdit() {
-      document.getElementById('aboutInput').value = window.originalAbout;
-      document.getElementById('locationInput').value = window.originalLocation;
-      document.getElementById('aboutSection').style.display = 'block';
-      document.getElementById('locationSection').style.display = 'block';
-      document.getElementById('aboutEditSection').style.display = 'none';
-      document.getElementById('locationEditSection').style.display = 'none';
-    }
-  
-    function saveProfile() {
-      const loggedInUser = JSON.parse(localStorage.getItem("echoloopUser"));
-      const updated = {
-        about: document.getElementById('aboutInput').value,
-        locations: document.getElementById('locationInput').value
-      };
-  
-      fetch(`/api/users/${loggedInUser.id}/community-profile`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updated)
-      })
-      .then(res => {
-        if (res.ok) {
-          document.getElementById('communityAbout').textContent = updated.about || '—';
-          document.getElementById('communityLocation').textContent = updated.locations || '—';
-          window.originalAbout = updated.about;
-          window.originalLocation = updated.locations;
-          cancelEdit();
-        } else {
-          alert('Failed to update profile');
-        }
-      })
-      .catch(err => {
-        console.error('Error:', err);
-        alert('Failed to update profile');
-      });
-    }
   
     function editPost(postId) {
       window.location.href = `edit_post.html?id=${postId}`;
@@ -504,11 +684,46 @@
           alert('Failed to delete event');
         });
     }
-  
-    document.getElementById('editAboutBtn').onclick = editAbout;
-    document.getElementById('editLocationBtn').onclick = editLocation;
+
+    function cancelEdit() {
+      document.getElementById('aboutInput').value = window.originalAbout;
+      document.getElementById('locationInput').value = window.originalLocation;
+      document.getElementById('aboutSection').style.display = 'block';
+      document.getElementById('locationSection').style.display = 'block';
+      document.getElementById('aboutEditSection').style.display = 'none';
+      document.getElementById('locationEditSection').style.display = 'none';
+      document.getElementById('editActions').style.display = 'none';
+      document.getElementById('editBtn').style.display = 'inline-block';
+    }
+
+    function saveProfileEdits() {
+      const loggedInUser = JSON.parse(localStorage.getItem("echoloopUser"));
+      const updatedProfile = {
+        about: document.getElementById('aboutInput').value,
+        locations: document.getElementById('locationInput').value
+      };
+
+      fetch(`/api/users/${loggedInUser.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedProfile)
+      })
+      .then(res => {
+        if (res.ok) {
+          document.getElementById('communityAbout').textContent = updatedProfile.about || '—';
+          document.getElementById('communityLocation').textContent = updatedProfile.locations || '—';
+          window.originalAbout = updatedProfile.about;
+          window.originalLocation = updatedProfile.locations;
+          cancelEdit();
+        } else {
+          alert('Failed to update profile');
+        }
+      })
+      .catch(err => {
+        console.error('Error:', err);
+        alert('Failed to update profile');
+      });
+    }
   </script>
-  
-  
 </body>
 </html> 

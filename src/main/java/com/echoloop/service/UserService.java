@@ -1,8 +1,7 @@
 package com.echoloop.service;
 
 import com.echoloop.dto.UserDTO;
-import com.echoloop.model.Event;
-import com.echoloop.model.User;
+import com.echoloop.model.*;
 import com.echoloop.repository.UserRepository;
 import com.echoloop.repository.EventRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +23,9 @@ public class UserService {
     @Autowired
     private EventRepository eventRepository;
 
+    @Autowired
+    private NotificationService notificationService;
+
     private UserDTO mapToDto(User user) {
         UserDTO dto = new UserDTO();
         dto.setId(user.getId());
@@ -35,6 +37,7 @@ public class UserService {
         dto.setExperience(user.getExperience());
         dto.setSkills(user.getSkills());
         dto.setAbout(user.getAbout());
+        dto.setProfilePicture(user.getProfilePicture());
         return dto;
     }
 
@@ -47,6 +50,36 @@ public class UserService {
 
         userRepository.save(user);
         userRepository.save(target);
+
+        // Debug logging for user roles
+        System.out.println("\n=== Follow Notification Debug ===");
+        System.out.println("Follower details:");
+        System.out.println("- ID: " + userId);
+        System.out.println("- Username: " + user.getUsername());
+        System.out.println("- Role: " + user.getRole());
+        System.out.println("- Role null check: " + (user.getRole() == null));
+        System.out.println("- Role case: " + user.getRole());
+        
+        // Determine follower type
+        boolean isFollowerCommunity = "event community".equalsIgnoreCase(user.getRole());
+        String followerType = isFollowerCommunity ? "community" : "dj";
+        
+        // Create notification message
+        String notificationMessage = String.format("%s started following you|%s", user.getUsername(), followerType);
+        
+        System.out.println("\nNotification details:");
+        System.out.println("- Message: " + notificationMessage);
+        System.out.println("- Follower type: " + followerType);
+        System.out.println("- Target user ID: " + targetUserId);
+        System.out.println("- Related entity ID (follower ID): " + userId);
+        System.out.println("- Is follower community? " + isFollowerCommunity);
+        
+        notificationService.createNotification(
+            targetUserId,
+            NotificationType.NEW_FOLLOWER,
+            notificationMessage,
+            userId  // Using follower's ID as relatedEntityId
+        );
     }
 
     public void unfollowUser(Long userId, Long targetUserId) {

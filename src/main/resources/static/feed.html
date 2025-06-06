@@ -6,21 +6,103 @@
   <title>Feed - EchoLoop</title>
   <link rel="stylesheet" href="style.css"/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" href="/css/notifications.css">
+  <script src="/webjars/sockjs-client/1.5.1/sockjs.min.js"></script>
+  <script src="/webjars/stomp-websocket/2.3.4/stomp.min.js"></script>
+  <script src="/js/notifications.js"></script>
+  <script src="/js/common.js"></script>
   <script src="script.js" defer></script>
+  <style>
+    .feed-post-header h4 a {
+      color: var(--text-primary);
+      text-decoration: none;
+      font-weight: 600;
+      transition: color 0.2s ease;
+      cursor: pointer;
+    }
+
+    .feed-post-header h4 a:hover {
+      color: var(--accent-primary);
+    }
+
+    .feed-comment a, .comment a {
+      color: var(--text-primary);
+      text-decoration: none;
+      font-weight: 600;
+      transition: color 0.2s ease;
+      cursor: pointer;
+    }
+
+    .feed-comment a:hover, .comment a:hover {
+      color: var(--accent-primary);
+    }
+
+    .feed-post {
+      position: relative;
+      transition: background-color 0.3s ease;
+    }
+
+    .feed-post.highlighted {
+      background-color: rgba(124, 92, 255, 0.1);
+      animation: highlight-fade 2s forwards;
+    }
+
+    .feed-post.highlighted::before {
+      content: '';
+      position: absolute;
+      left: -2px;
+      top: 0;
+      bottom: 0;
+      width: 4px;
+      background-color: var(--accent-primary);
+      animation: highlight-bar 2s forwards;
+    }
+
+    @keyframes highlight-fade {
+      0% {
+        background-color: rgba(124, 92, 255, 0.1);
+      }
+      100% {
+        background-color: transparent;
+      }
+    }
+
+    @keyframes highlight-bar {
+      0%, 80% {
+        opacity: 1;
+      }
+      100% {
+        opacity: 0;
+      }
+    }
+  </style>
 </head>
 <body>
   <nav class="feed-navbar">
     <a href="feed.html" class="feed-logo">
       <img src="images/logoecho.png" alt="EchoLoop" class="feed-logo-img"/>
     </a>
-    <div class="feed-nav-links"></div>
+    <button class="mobile-menu-button" onclick="toggleMobileMenu()">
+      <i class="fas fa-bars"></i>
+    </button>
+    <div class="feed-nav-links">
+      <a href="feed.html" class="active">Feed</a>
+      <a href="suggestions.html">Suggestions</a>
+      <a href="create_post.html">Create Post</a>
+      <a href="opportunities.html">Opportunities</a>
+      <a href="messages.html">Messages</a>
+      <a href="my_applications.html">My Applications</a>
+      <a href="my_profile.html">Account</a>
+      <!-- The notification bell will be inserted here -->
+    </div>
   </nav>
 
   <div class="feed-search-bar-wrapper">
     <input 
       type="text" 
       id="searchInput" 
-      placeholder="Search for users, events, or posts..." 
+      placeholder="Search for DJs, Event Communities, or Events..." 
       class="feed-search-bar" 
       onkeypress="handleSearchKey(event)"
     >
@@ -41,93 +123,136 @@
   </main>
 
   <script>
-    document.addEventListener("DOMContentLoaded", () => {
+    document.addEventListener("DOMContentLoaded", async () => {
       if (!loggedInUser) {
         window.location.href = "index.html";
         return;
       }
 
-      updateNavigationBar();
+      // Initialize notification manager with logged in user's ID
+      window.notificationManager = new NotificationManager(loggedInUser.id);
 
-      fetch(`/api/posts/following/${loggedInUser.id}`)
-        .then(res => res.json())
-        .then(posts => {
-          const container = document.getElementById("feed");
-          container.innerHTML = "";
+      // Track post loading state
+      let postsLoading = true;
 
-          if (!posts.length) {
-            container.innerHTML = `
-              <div class="feed-empty-state">
-                <p>No posts yet. Follow some users to see their posts!</p>
-              </div>
-            `;
-            return;
-          }
+      // Store initial hash for later use
+      const initialHash = window.location.hash;
 
-          posts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      try {
+        const response = await fetch(`/api/posts/following/${loggedInUser.id}`);
+        const posts = await response.json();
+        const container = document.getElementById("feed");
+        container.innerHTML = "";
 
-          posts.forEach(post => {
-            const div = document.createElement("div");
-            div.className = "feed-post";
-
-            const initials = post.username ? post.username[0].toUpperCase() : "?";
-            const imageHTML = post.imageUrl
-              ? `<img src="${post.imageUrl}" alt="Post image" class="feed-post-image" loading="lazy" />`
-              : "";
-            const timestamp = new Date(post.createdAt).toLocaleString('en-US', {
-              weekday: 'short',
-              month: 'short',
-              day: 'numeric',
-              hour: 'numeric',
-              minute: '2-digit',
-              hour12: true
-            });
-
-            const commentsHTML = post.recentComments && post.recentComments.length > 0
-              ? `<div class="feed-comments">
-                   ${post.recentComments.map(c => `
-                     <div class="feed-comment">
-                       <strong>${c.username}</strong>: ${c.content}
-                     </div>
-                   `).join("")}
-                 </div>`
-              : `<div class="feed-comments"><em>No comments yet</em></div>`;
-
-            div.innerHTML = `
-              <div class="feed-post-header">
-                <div class="feed-avatar">${initials}</div>
-                <div class="feed-post-content">
-                  <h4>${post.username} <small>${timestamp}</small></h4>
-                  <p>${post.content}</p>
-                  ${imageHTML}
-                  <div class="post-actions">
-                    <button onclick="likePost(${post.id}, this)" class="feed-button">Like</button>
-                  </div>
-                  <div class="comment-section">
-                    ${(post.comments || []).map(c => `
-                      <div class="comment">
-                        <strong>${c.username}</strong>: ${c.content}
-                      </div>
-                    `).join('')}
-                    <input type="text" class="comment-input" placeholder="Write a comment..." onkeydown="handleCommentKey(event, ${post.id})" />
-                  </div>
-
-                  ${commentsHTML}
-                </div>
-              </div>
-            `;
-
-            container.appendChild(div);
-          });
-        })
-        .catch(err => {
-          console.error("Feed error:", err);
-          document.getElementById("feed").innerHTML = `
-            <div class="feed-error-state">
-              <p>Failed to load feed. Please try again later.</p>
+        if (!posts.length) {
+          container.innerHTML = `
+            <div class="feed-empty-state">
+              <p>No posts yet. Follow some users to see their posts!</p>
             </div>
           `;
+          postsLoading = false;
+          return;
+        }
+
+        // Sort posts by creation date
+        posts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+        // Create a document fragment to batch DOM updates
+        const fragment = document.createDocumentFragment();
+
+        posts.forEach(post => {
+          const div = document.createElement("div");
+          div.className = "feed-post";
+          div.id = `post-${post.id}`;
+
+          const initials = post.username ? post.username[0].toUpperCase() : "?";
+          const imageHTML = post.imageUrl
+            ? `<img src="${post.imageUrl}" alt="Post image" class="feed-post-image" loading="lazy" />`
+            : "";
+          const timestamp = new Date(post.createdAt).toLocaleString('en-US', {
+            weekday: 'short',
+            month: 'short',
+            day: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true
+          });
+
+          // Combine all comments into one array and sort by creation time
+          const allComments = [...(post.comments || []), ...(post.recentComments || [])].sort((a, b) => 
+            new Date(b.createdAt) - new Date(a.createdAt)
+          );
+
+          // Remove duplicates by comment ID
+          const uniqueComments = allComments.filter((comment, index, self) =>
+            index === self.findIndex((c) => c.id === comment.id)
+          );
+
+          const commentsHTML = uniqueComments.length > 0
+            ? uniqueComments.map(c => `
+                <div class="feed-comment">
+                  <a href="${c.userRole?.toLowerCase() === 'event community' ? 'community_profile.html' : 'profile.html'}?id=${c.userId}">
+                    <strong>${c.username}</strong>
+                  </a>: ${c.content}
+                </div>
+              `).join("")
+            : '<div class="feed-comment"><em>No comments yet</em></div>';
+
+          div.innerHTML = `
+            <div class="feed-post-header">
+              <div class="feed-avatar">${initials}</div>
+              <div class="feed-post-content">
+                <h4>
+                  <a href="${post.userRole?.toLowerCase() === 'event community' ? 'community_profile.html' : 'profile.html'}?id=${post.userId}">
+                    ${post.username}
+                  </a>
+                  <small>${timestamp}</small>
+                </h4>
+                <p>${post.content}</p>
+                ${imageHTML}
+                <div class="post-actions">
+                  <button onclick="likePost(${post.id}, this)" class="feed-button">Like (${post.likeCount || 0})</button>
+                  <button onclick="toggleCommentInput(${post.id})" class="feed-button">Comment (${post.commentCount || 0})</button>
+                </div>
+                <div class="comment-section">
+                  ${commentsHTML}
+                  <div class="feed-comment-input" id="commentInput-${post.id}" style="display: none;">
+                    <textarea placeholder="Write a comment..." class="feed-textarea" rows="2"></textarea>
+                    <div class="feed-comment-actions">
+                      <button onclick="submitComment(${post.id})" class="feed-button">Post</button>
+                      <button onclick="toggleCommentInput(${post.id})" class="feed-button">Cancel</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          `;
+
+          fragment.appendChild(div);
         });
+
+        // Batch append all posts at once
+        container.appendChild(fragment);
+
+        // Mark posts as loaded
+        postsLoading = false;
+        console.log('Posts finished loading');
+
+        // Handle initial hash navigation after posts are loaded
+        if (initialHash) {
+          handleHashNavigation();
+        }
+
+      } catch (error) {
+        console.error('Error fetching posts:', error);
+        const container = document.getElementById("feed");
+        container.innerHTML = `
+          <div class="feed-empty-state">
+            <p>Error loading posts. Please try again later.</p>
+          </div>
+        `;
+        postsLoading = false;
+      }
     });
 
     function likePost(postId, button) {
@@ -168,26 +293,102 @@
           alert("Could not post comment.");
         });
     }
-    function handleCommentKey(event, postId) {
-  if (event.key === "Enter") {
-    const input = event.target;
-    const comment = input.value.trim();
-    if (!comment) return;
 
-    fetch(`/api/social/comment/${postId}/${loggedInUser.id}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ content: comment })
-    })
-      .then(res => res.ok ? res.json() : Promise.reject())
-      .then(newComment => {
-        const commentHTML = `<div class="comment"><strong>${newComment.username}</strong>: ${newComment.content}</div>`;
-        input.insertAdjacentHTML('beforebegin', commentHTML);
-        input.value = '';
+    function handleCommentKey(event, postId) {
+      if (event.key === "Enter") {
+        submitComment(postId);
+      }
+    }
+
+    function toggleCommentInput(postId) {
+      const commentInput = document.getElementById(`commentInput-${postId}`);
+      const isHidden = commentInput.style.display === 'none';
+      
+      // Hide all other comment inputs first
+      document.querySelectorAll('.feed-comment-input').forEach(input => {
+        input.style.display = 'none';
+      });
+      
+      // Toggle this comment input
+      commentInput.style.display = isHidden ? 'block' : 'none';
+      
+      // Focus the textarea if showing
+      if (isHidden) {
+        const textarea = commentInput.querySelector('textarea');
+        textarea.focus();
+      }
+    }
+
+    function submitComment(postId) {
+      const commentInput = document.getElementById(`commentInput-${postId}`);
+      const textarea = commentInput.querySelector('textarea');
+      const content = textarea.value.trim();
+      
+      if (!content) return;
+
+      fetch(`/api/social/posts/${postId}/comments?userId=${loggedInUser.id}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content })
       })
-      .catch(() => alert("Could not post comment."));
-  }
-}
+        .then(res => res.ok ? res.json() : Promise.reject())
+        .then(newComment => {
+          console.log("New comment response:", newComment);
+          
+          // Create the new comment HTML
+          const commentHTML = `
+            <div class="feed-comment">
+              <a href="${newComment.userRole?.toLowerCase() === 'event community' ? 'community_profile.html' : 'profile.html'}?id=${newComment.userId}">
+                <strong>${newComment.username}</strong>
+              </a>: ${newComment.content}
+            </div>`;
+          
+          // Find the comment section
+          const commentSection = commentInput.closest('.comment-section');
+          
+          // Remove "No comments yet" if it exists
+          const noComments = commentSection.querySelector('.feed-comment em');
+          if (noComments && noComments.textContent === 'No comments yet') {
+            noComments.closest('.feed-comment').remove();
+          }
+          
+          // Insert the new comment at the top
+          commentSection.insertAdjacentHTML('afterbegin', commentHTML);
+          
+          // Clear and hide the comment input
+          textarea.value = '';
+          commentInput.style.display = 'none';
+          
+          // Update the comment count
+          const commentButton = commentSection.previousElementSibling.querySelector('button:last-child');
+          const currentCount = parseInt(commentButton.textContent.match(/\d+/)[0]);
+          commentButton.textContent = `Comment (${currentCount + 1})`;
+        })
+        .catch(() => alert("Could not post comment."));
+    }
+
+    function toggleMobileMenu() {
+      const navLinks = document.querySelector('.feed-nav-links');
+      navLinks.classList.toggle('show');
+    }
+
+    // Close mobile menu when clicking outside
+    document.addEventListener('click', (e) => {
+      const navLinks = document.querySelector('.feed-nav-links');
+      const mobileMenuBtn = document.querySelector('.mobile-menu-button');
+      
+      if (!navLinks.contains(e.target) && !mobileMenuBtn.contains(e.target) && navLinks.classList.contains('show')) {
+        navLinks.classList.remove('show');
+      }
+    });
+
+    // Close mobile menu when window is resized above mobile breakpoint
+    window.addEventListener('resize', () => {
+      if (window.innerWidth > 768) {
+        const navLinks = document.querySelector('.feed-nav-links');
+        navLinks.classList.remove('show');
+      }
+    });
   </script>
 </body>
 </html>

@@ -5,7 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Suggestions - EchoLoop</title>
   <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="css/notifications.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <!-- Load WebSocket dependencies first -->
+  <script src="/webjars/sockjs-client/1.5.1/sockjs.min.js"></script>
+  <script src="/webjars/stomp-websocket/2.3.4/stomp.min.js"></script>
+  <!-- Load notification system -->
+  <script src="/js/notifications.js"></script>
+  <script src="/js/common.js"></script>
+  <!-- Load page specific scripts -->
   <script src="script.js" defer></script>
+  <script src="search.js" defer></script>
   <style>
     /* Basic Reset */
 * {
@@ -248,7 +259,7 @@ body {
 .feed-event-card {
   background: var(--surface);
   border-radius: 14px;
-  padding: 16px;
+  padding: 24px;
   width: calc(50% - 10px);
   box-shadow: var(--shadow-sm);
   border: 1px solid var(--border);
@@ -263,23 +274,21 @@ body {
   box-shadow: var(--shadow-md);
 }
 
-.feed-event-card img {
-  width: 100%;
-  height: 140px;
-  object-fit: cover;
-  border-radius: 10px;
-}
-
 .feed-event-card h4 {
-  font-size: 1.05em;
+  font-size: 1.2em;
   margin: 0;
   color: var(--text-primary);
 }
 
 .feed-event-card p {
   color: var(--text-secondary);
-  font-size: 0.9em;
+  font-size: 0.95em;
   margin: 0;
+  line-height: 1.5;
+}
+
+.feed-event-card .feed-button {
+  margin-top: 8px;
 }
 
 /* Buttons */
@@ -330,17 +339,10 @@ body {
   </style>
 </head>
 <body>
-  <nav class="feed-navbar">
-    <a href="feed.html" class="feed-logo">
-      <img src="images/logoecho.png" alt="EchoLoop Logo" class="feed-logo-img" />
-    </a>
-    <div class="feed-nav-links">
-      <!-- Navigation will be populated by JavaScript -->
-    </div>
-  </nav>
+  <!-- Navbar will be injected by common.js -->
 
   <div class="feed-search-bar-wrapper">
-    <input type="text" id="searchInput" placeholder="Search for users, events, or posts..." class="feed-search-bar" onkeypress="handleSearchKey(event)" />
+    <input type="text" id="searchInput" placeholder="Search for DJs, Event Communities, or Events..." class="feed-search-bar" onkeypress="handleSearchKey(event)" />
   </div>
   <div id="searchResults" class="search-results-container"></div>
 
@@ -368,7 +370,7 @@ body {
       }
 
       const userId = user.id;
-      const isCommunity = user?.role?.toLowerCase() === "event community";
+      const role = user.role?.toLowerCase();
 
       // Fetch user's interested events
       let interestedEvents = new Set();
@@ -402,7 +404,8 @@ body {
           document.getElementById("communitySuggestionsContainer").innerHTML = "<p>Could not load community suggestions.</p>";
         });
 
-      if (!isCommunity) {
+      // Fetch event suggestions if user is a DJ
+      if (role === "dj") {
         fetch(`/api/events/${userId}/suggestions/performed`)
           .then(res => res.json())
           .then(data => renderSuggestions(data, "Events Based on What You've Performed"));
@@ -427,7 +430,7 @@ body {
         card.className = "feed-dj-card";
 
         const img = document.createElement("img");
-        img.src = user.role?.toLowerCase() === "dj" ? "images/dj_placeholder.jpg" : "images/venue-profile.jpg";
+        img.src = "images/default-profile.png";
         img.alt = user.username;
         img.className = "feed-dj-avatar";
 
@@ -477,12 +480,11 @@ body {
         events.forEach(event => {
           const card = document.createElement("div");
           card.className = "feed-event-card";
-          const image = event.imageUrl || "images/event_placeholder.jpg";
 
           card.innerHTML = `
-            <img src="${image}" alt="${event.title}" />
             <h4>${event.title}</h4>
             <p>${event.eventDate}<br>${event.location}</p>
+            <p><strong>Event Community:</strong> <a href="community_profile.html?id=${event.communityId}">${event.communityName}</a></p>
             <button class="feed-button" onclick="window.location.href='event_detail.html?eventId=${event.id}'">View Event</button>
             <button class="feed-button" onclick="markInterest(${event.id}, this)">I'm Interested</button>
           `;

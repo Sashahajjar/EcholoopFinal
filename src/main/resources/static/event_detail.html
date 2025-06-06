@@ -2,8 +2,16 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Event Details - EchoLoop</title>
   <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="stylesheet" href="css/notifications.css">
+  <script src="/webjars/sockjs-client/1.5.1/sockjs.min.js"></script>
+  <script src="/webjars/stomp-websocket/2.3.4/stomp.min.js"></script>
+  <script src="/js/notifications.js"></script>
+  <script src="/js/common.js"></script>
   <script src="script.js" defer></script>
   <style>
     :root {
@@ -145,15 +153,10 @@
   </style>
 </head>
 <body>
-  <nav class="feed-navbar">
-    <a href="feed.html" class="feed-logo">
-      <img src="images/logoecho.png" alt="EchoLoop Logo" class="feed-logo-img" />
-    </a>
-    <div class="feed-nav-links"></div>
-  </nav>
+  <!-- Navbar will be injected by common.js -->
 
   <div class="feed-search-bar-wrapper">
-    <input type="text" id="searchInput" placeholder="Search..." class="feed-search-bar" onkeypress="handleSearchKey(event)" />
+    <input type="text" id="searchInput" placeholder="Search for DJs, Event Communities, or Events..." class="feed-search-bar" onkeypress="handleSearchKey(event)" />
   </div>
   <div id="searchResults" class="search-results-container"></div>
 
@@ -163,6 +166,7 @@
       <p><strong>Genre:</strong> <span id="eventGenre"></span></p>
       <p><strong>Location:</strong> <span id="eventLocation"></span></p>
       <p><strong>Date:</strong> <span id="eventDate"></span></p>
+      <p><strong>Event Community:</strong> <a id="eventCommunityLink"><span id="eventCommunity"></span></a></p>
       <p><strong>Description:</strong><br><span id="eventDescription"></span></p>
       <div class="feed-event-actions">
         <button id="applyBtn" class="feed-button-dark">Apply</button>
@@ -211,6 +215,8 @@
         document.getElementById("eventLocation").textContent = event.location;
         document.getElementById("eventDate").textContent = event.eventDate;
         document.getElementById("eventDescription").textContent = event.description;
+        document.getElementById("eventCommunity").textContent = event.communityName;
+        document.getElementById("eventCommunityLink").href = `community_profile.html?id=${event.communityId}`;
 
         // Update button states
         const applyBtn = document.getElementById("applyBtn");

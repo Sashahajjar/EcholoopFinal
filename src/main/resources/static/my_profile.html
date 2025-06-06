@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Profile - EchoLoop</title>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const user = JSON.parse(localStorage.getItem('echoloopUser'));
+            if (!user) {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            // Redirect to the appropriate profile page based on user role
+            if (user.role?.toLowerCase() === 'event community') {
+                window.location.href = `community_profile.html?id=${user.id}`;
+            } else {
+                window.location.href = `profile.html?id=${user.id}`;
+            }
+        });
+    </script>
+</head>
+<body>
+    <p>Redirecting to your profile...</p>
+</body>
+</html> 

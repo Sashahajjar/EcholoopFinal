@@ -44,17 +44,12 @@ public class EventController {
 
     @PostMapping("/{eventId}/apply/{djId}")
     public ResponseEntity<?> applyToEvent(@PathVariable Long eventId, @PathVariable Long djId) {
-        Event event = eventRepository.findById(eventId).orElse(null);
-        User dj = userRepository.findById(djId).orElse(null);
-        if (event == null || dj == null) {
-            return ResponseEntity.badRequest().body("Invalid event or DJ ID.");
+        try {
+            eventService.applyToEvent(djId, eventId);
+            return ResponseEntity.ok("Application submitted.");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error applying to event: " + e.getMessage());
         }
-        if (event.getApplicants().contains(dj) || event.getPerformingDjs().contains(dj)) {
-            return ResponseEntity.badRequest().body("Already applied or accepted.");
-        }
-        event.getApplicants().add(dj);
-        eventRepository.save(event);
-        return ResponseEntity.ok("Application submitted.");
     }
 
     @GetMapping("/{userId}/suggestions/genre")
@@ -87,22 +82,12 @@ public class EventController {
     public ResponseEntity<?> acceptApplicant(@PathVariable Long eventId,
                                              @PathVariable Long djId,
                                              @RequestParam Long requesterId) {
-        Event event = eventRepository.findById(eventId).orElse(null);
-        User dj = userRepository.findById(djId).orElse(null);
-        User requester = userRepository.findById(requesterId).orElse(null);
-        if (event == null || dj == null || requester == null) {
-            return ResponseEntity.badRequest().body("Invalid event or user ID.");
+        try {
+            eventService.acceptApplicant(eventId, djId, requesterId);
+            return ResponseEntity.ok("DJ accepted successfully.");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error accepting applicant: " + e.getMessage());
         }
-        if (!event.getCreatedBy().getId().equals(requesterId)) {
-            return ResponseEntity.status(403).body("Unauthorized.");
-        }
-        if (event.getPerformingDjs().contains(dj)) {
-            return ResponseEntity.badRequest().body("DJ already accepted.");
-        }
-        event.getApplicants().remove(dj);
-        event.getPerformingDjs().add(dj);
-        eventRepository.save(event);
-        return ResponseEntity.ok("DJ accepted successfully.");
     }
 
     @PostMapping("/{eventId}/reject/{djId}")
@@ -260,11 +245,17 @@ public class EventController {
         User user = userRepository.findById(userId).orElseThrow();
         return ResponseEntity.ok(user.getInterestedEvents().stream().map(EventDTO::fromEntity).collect(Collectors.toList()));
     }
-    @DeleteMapping(value = "/{eventId}/interest/{userId}", produces = "application/json")
-public ResponseEntity<?> removeInterest(@PathVariable Long eventId, @PathVariable Long userId) {
-    userService.removeInterest(userId, eventId);
-    return ResponseEntity.ok().build();
-}
 
-
+    @DeleteMapping("/{userId}/interested/{eventId}")
+    public ResponseEntity<?> removeInterest(@PathVariable Long userId, @PathVariable Long eventId) {
+        try {
+            User user = userRepository.findById(userId).orElseThrow();
+            Event event = eventRepository.findById(eventId).orElseThrow();
+            user.getInterestedEvents().remove(event);
+            userRepository.save(user);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error removing interest: " + e.getMessage());
+        }
+    }
 }

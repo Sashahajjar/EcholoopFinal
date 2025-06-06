@@ -12,6 +12,7 @@ public class UserDTO {
     private String experience;
     private String skills;
     private String about;
+    private String profilePicture;
 
     public UserDTO() {}
 
@@ -26,6 +27,7 @@ public class UserDTO {
         dto.setExperience(user.getExperience());
         dto.setSkills(user.getSkills());
         dto.setAbout(user.getAbout());
+        dto.setProfilePicture(user.getProfilePicture());
         return dto;
     }
 
@@ -99,5 +101,13 @@ public class UserDTO {
 
     public void setAbout(String about) {
         this.about = about;
+    }
+
+    public String getProfilePicture() {
+        return profilePicture;
+    }
+
+    public void setProfilePicture(String profilePicture) {
+        this.profilePicture = profilePicture;
     }
 }

@@ -14,6 +14,7 @@ public class PostDTO {
     private LocalDateTime createdAt;
     private String username;
     private Long userId;
+    private String userRole;
 
     private int likeCount;
     private int commentCount;
@@ -26,13 +27,13 @@ public class PostDTO {
         this.createdAt = post.getCreatedAt();
         this.username = post.getUser().getUsername();
         this.userId = post.getUser().getId();
+        this.userRole = post.getUser().getRole();
 
         this.likeCount = post.getLikes() != null ? post.getLikes().size() : 0;
         this.commentCount = post.getComments() != null ? post.getComments().size() : 0;
         this.recentComments = post.getComments() != null
             ? post.getComments().stream()
                 .sorted((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt()))
-                .limit(2)
                 .map(CommentDTO::fromEntity)
                 .collect(Collectors.toList())
             : List.of();
@@ -60,6 +61,9 @@ public class PostDTO {
 
     public Long getUserId() { return userId; }
     public void setUserId(Long userId) { this.userId = userId; }
+
+    public String getUserRole() { return userRole; }
+    public void setUserRole(String userRole) { this.userRole = userRole; }
 
     public int getLikeCount() { return likeCount; }
     public void setLikeCount(int likeCount) { this.likeCount = likeCount; }

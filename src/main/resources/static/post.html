@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Post Detail - EchoLoop</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="css/notifications.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="/webjars/sockjs-client/1.5.1/sockjs.min.js"></script>
+    <script src="/webjars/stomp-websocket/2.3.4/stomp.min.js"></script>
+    <script src="/js/notifications.js"></script>
+    <script src="/js/common.js"></script>
+    <script src="script.js" defer></script>
+</head>
+<body>
+    <main class="main-content">
+        <div id="postContainer" class="post-detail-container">
+            <!-- Post content will be loaded here -->
+        </div>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const loggedInUser = JSON.parse(localStorage.getItem('echoloopUser'));
+            if (!loggedInUser) {
+                window.location.href = '/index.html';
+                return;
+            }
+
+            // Get post ID from URL
+            const postId = new URLSearchParams(window.location.search).get('id');
+            if (!postId) {
+                alert('No post specified');
+                window.location.href = '/feed.html';
+                return;
+            }
+
+            // Load post details
+            fetch(`/api/posts/${postId}`)
+                .then(res => {
+                    if (!res.ok) throw new Error('Post not found');
+                    return res.json();
+                })
+                .then(post => {
+                    // Render post content
+                    document.getElementById('postContainer').innerHTML = `
+                        <div class="post">
+                            <h1>${post.title}</h1>
+                            <p>${post.content}</p>
+                            <!-- Add more post details as needed -->
+                        </div>
+                    `;
+                })
+                .catch(error => {
+                    console.error('Error loading post:', error);
+                    alert('Failed to load post');
+                    window.location.href = '/feed.html';
+                });
+        });
+    </script>
+</body>
+</html> 

@@ -10,16 +10,11 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.HashSet;
 import java.nio.file.Path;
+import org.springframework.beans.factory.annotation.Value;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.echoloop.dto.PostDTO;
@@ -28,12 +23,26 @@ import com.echoloop.model.User;
 import com.echoloop.repository.PostRepository;
 import com.echoloop.repository.UserRepository;
 
+import jakarta.annotation.PostConstruct;
+
 @RestController
 @RequestMapping("/api/posts")
 public class PostController {
 
+    @Value("${file.upload-dir:uploads}")
+    private String uploadDir;
+
     @Autowired private PostRepository postRepo;
     @Autowired private UserRepository userRepo;
+
+    @PostConstruct
+    public void init() {
+        try {
+            Files.createDirectories(Paths.get(uploadDir));
+        } catch (IOException e) {
+            throw new RuntimeException("Could not create upload directory!", e);
+        }
+    }
 
     @PostMapping
     public ResponseEntity<?> createPost(@RequestParam Long userId,
@@ -47,9 +56,10 @@ public class PostController {
 
         if (image != null && !image.isEmpty()) {
             String fileName = UUID.randomUUID() + "_" + image.getOriginalFilename();
-            Path path = Paths.get("src/main/resources/static/uploads", fileName);
-            Files.copy(image.getInputStream(), path);
-            post.setImageUrl("uploads/" + fileName);
+            Path uploadPath = Paths.get(uploadDir);
+            Files.createDirectories(uploadPath);
+            Files.copy(image.getInputStream(), uploadPath.resolve(fileName));
+            post.setImageUrl("/uploads/" + fileName);
         }
 
         postRepo.save(post);
@@ -113,9 +123,10 @@ public class PostController {
 
         if (image != null && !image.isEmpty()) {
             String fileName = UUID.randomUUID() + "_" + image.getOriginalFilename();
-            Path path = Paths.get("src/main/resources/static/uploads", fileName);
-            Files.copy(image.getInputStream(), path);
-            post.setImageUrl("uploads/" + fileName);
+            Path uploadPath = Paths.get(uploadDir);
+            Files.createDirectories(uploadPath);
+            Files.copy(image.getInputStream(), uploadPath.resolve(fileName));
+            post.setImageUrl("/uploads/" + fileName);
         }
 
         postRepo.save(post);

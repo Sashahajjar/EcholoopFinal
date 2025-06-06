@@ -5,6 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>EchoLoop - My Applications</title>
   <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="css/notifications.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+  <script src="/webjars/sockjs-client/1.5.1/sockjs.min.js"></script>
+  <script src="/webjars/stomp-websocket/2.3.4/stomp.min.js"></script>
+  <script src="/js/notifications.js"></script>
+  <script src="/js/common.js"></script>
   <script src="script.js" defer></script>
   <style>/* Page Container */
     .feed-container {
@@ -32,6 +39,9 @@
     }
     
     .application-entry {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
       font-size: 1em;
       padding: 12px 16px;
       border-bottom: 1px solid var(--border);
@@ -46,32 +56,52 @@
     .application-entry:last-child {
       border-bottom: none;
     }
-    
+
+    .application-entry a {
+      color: var(--accent-primary);
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .application-entry a:hover {
+      color: var(--accent-secondary);
+      text-decoration: underline;
+    }
+
+    .status-badge {
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 0.9em;
+      font-weight: 500;
+    }
+
+    .status-pending {
+      background-color: #FEF3C7;
+      color: #92400E;
+    }
+
+    .status-accepted {
+      background-color: #D1FAE5;
+      color: #065F46;
+    }
+
+    .status-rejected {
+      background-color: #FEE2E2;
+      color: #991B1B;
+    }
+
     /* Search Bar already styled by shared rules */
     </style>
 </head>
 <body>
-  <!-- Navbar -->
-  <nav class="feed-navbar">
-    <a href="feed.html" class="feed-logo">
-      <img src="images/logoecho.png" alt="EchoLoop Logo" class="feed-logo-img">
-    </a>
-    <div class="feed-nav-links">
-      <a href="suggestions.html">Suggestions</a>
-      <a href="create_post.html">Create Post</a>
-      <a href="opportunities.html">Opportunities</a>
-      <a id="createEventLink" href="create_event.html" style="display: none;">Create Event</a>
-      <a href="my_applications.html" class="active">My Applications</a>
-      <a href="#" onclick="goToAccount()">Account</a>
-    </div>
-  </nav>
+  <!-- Navbar will be injected by common.js -->
 
   <!-- Search Bar -->
   <div class="feed-search-bar-wrapper">
     <input
       type="text"
       id="searchInput"
-      placeholder="Search your applications…"
+      placeholder="Filter your applications..."
       class="feed-search-bar"
       onkeyup="filterApplications()" />
   </div>
@@ -105,10 +135,15 @@
           }
 
           data.forEach(entry => {
-            const p = document.createElement("p");
-            p.className = "application-entry"; // Needed for filtering
-            p.textContent = `${entry.eventTitle}: ${entry.status}`;
-            container.appendChild(p);
+            const div = document.createElement("div");
+            div.className = "application-entry";
+            
+            const statusClass = `status-${entry.status.toLowerCase()}`;
+            div.innerHTML = `
+              <a href="event_detail.html?eventId=${entry.eventId}">${entry.eventTitle}</a>
+              <span class="status-badge ${statusClass}">${entry.status}</span>
+            `;
+            container.appendChild(div);
           });
         })
         .catch(err => {

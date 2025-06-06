@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Security Demo - EchoLoop</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .demo-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .result {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h1>EchoLoop Security Demonstration</h1>
+
+    <div class="demo-section">
+        <h2>1. Password Hashing Demo</h2>
+        <p>This demonstrates how passwords are securely hashed before storage:</p>
+        <button onclick="demonstratePasswordHashing()">Test Password Hashing</button>
+        <div id="hashingResult" class="result"></div>
+    </div>
+
+    <div class="demo-section">
+        <h2>2. File Upload Security Demo</h2>
+        <p>This demonstrates file upload restrictions:</p>
+        <input type="file" id="fileInput">
+        <button onclick="demonstrateFileUpload()">Test File Upload</button>
+        <div id="uploadResult" class="result"></div>
+    </div>
+
+    <script>
+        async function demonstratePasswordHashing() {
+            try {
+                const response = await fetch('/api/users/security-demo');
+                const data = await response.json();
+                document.getElementById('hashingResult').innerHTML = `
+                    <p><strong>Original Password:</strong> ${data.originalPassword}</p>
+                    <p><strong>Hashed Password:</strong> ${data.hashedPassword}</p>
+                    <p><strong>Password Match Check:</strong> ${data.passwordMatch}</p>
+                    <p><em>Notice how the hashed password is different each time but still verifies correctly!</em></p>
+                `;
+            } catch (error) {
+                document.getElementById('hashingResult').innerHTML = `Error: ${error.message}`;
+            }
+        }
+
+        async function demonstrateFileUpload() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+            if (!file) {
+                document.getElementById('uploadResult').innerHTML = 'Please select a file first';
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const response = await fetch('/api/users/security-demo/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                
+                if (data.status === 'error') {
+                    document.getElementById('uploadResult').innerHTML = `
+                        <p><strong>Error:</strong> ${data.reason}</p>
+                        <p><em>This demonstrates our file upload restrictions in action!</em></p>
+                    `;
+                } else {
+                    document.getElementById('uploadResult').innerHTML = `
+                        <p><strong>File Name:</strong> ${data.fileName}</p>
+                        <p><strong>File Size:</strong> ${Math.round(data.fileSize / 1024)} KB</p>
+                        <p><strong>File Type:</strong> ${data.fileType}</p>
+                        <p><em>File passed all security checks!</em></p>
+                    `;
+                }
+            } catch (error) {
+                document.getElementById('uploadResult').innerHTML = `Error: ${error.message}`;
+            }
+        }
+    </script>
+</body>
+</html> 

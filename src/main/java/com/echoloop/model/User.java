@@ -33,6 +33,8 @@ public class User {
 
     @Column(columnDefinition = "TEXT")
     private String about;
+
+    private String profilePicture;
    
 
     @ManyToMany
@@ -62,6 +64,12 @@ public class User {
 
     public User() {}
 
+    public User(String username, String password, String role) {
+        this.username = username;
+        this.password = password;
+        this.role = role;
+    }
+
     public User(String username, String password, String role, String events, String locations, String genres) {
         this.username = username;
         this.password = password;
@@ -83,6 +91,10 @@ public class User {
     public String getRole() { return role; }
     public void setRole(String role) { this.role = role; }
 
+    public boolean isEventCommunity() {
+        return "event community".equalsIgnoreCase(this.role);
+    }
+
     public String getEvents() { return events; }
     public void setEvents(String events) { this.events = events; }
 
@@ -100,6 +112,14 @@ public class User {
 
     public String getAbout() { return about; }
     public void setAbout(String about) { this.about = about; }
+
+    public String getProfilePicture() {
+        return profilePicture;
+    }
+
+    public void setProfilePicture(String profilePicture) {
+        this.profilePicture = profilePicture;
+    }
 
     public Set<User> getFollowers() { return followers; }
     public void setFollowers(Set<User> followers) { this.followers = followers; }

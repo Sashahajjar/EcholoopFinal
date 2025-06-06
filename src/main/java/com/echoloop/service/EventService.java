@@ -2,6 +2,7 @@ package com.echoloop.service;
 
 import com.echoloop.dto.EventCreationRequest;
 import com.echoloop.model.Event;
+import com.echoloop.model.NotificationType;
 import com.echoloop.model.User;
 import com.echoloop.repository.EventRepository;
 import com.echoloop.repository.UserRepository;
@@ -19,6 +20,9 @@ public class EventService {
 
     @Autowired
     private EventRepository eventRepository;
+
+    @Autowired
+    private NotificationService notificationService;
 
     public List<Event> suggestByFollowing(Long userId) {
         User user = userRepository.findById(userId).orElseThrow();
@@ -86,6 +90,16 @@ public class EventService {
 
         event.getApplicants().add(dj);
         eventRepository.save(event);
+
+        // Notify event owner about the new application
+        if (event.getCreatedBy() != null) {
+            notificationService.createNotification(
+                event.getCreatedBy().getId(),
+                NotificationType.EVENT_APPLICATION,
+                dj.getUsername() + " applied to your event: " + event.getTitle(),
+                eventId
+            );
+        }
     }
 
     public List<User> getApplicantsForEvent(Long eventId, Long requesterId) {
@@ -107,6 +121,14 @@ public class EventService {
         event.getApplicants().remove(dj);
         event.getPerformingDjs().add(dj);
         eventRepository.save(event);
+
+        // Notify DJ about acceptance
+        notificationService.createNotification(
+            djId,
+            NotificationType.APPLICATION_ACCEPTED,
+            "Your application for " + event.getTitle() + " has been accepted!",
+            eventId
+        );
     }
 
     public void rejectApplicant(Long eventId, Long djId, Long requesterId) {
@@ -117,7 +139,16 @@ public class EventService {
         User dj = userRepository.findById(djId).orElseThrow();
 
         event.getApplicants().remove(dj);
+        event.getRejectedApplicants().add(dj);
         eventRepository.save(event);
+
+        // Notify DJ about rejection
+        notificationService.createNotification(
+            djId,
+            NotificationType.APPLICATION_REJECTED,
+            "Your application for " + event.getTitle() + " has been declined",
+            eventId
+        );
     }
 
     public List<Event> suggestByPerformedGenres(Long userId) {

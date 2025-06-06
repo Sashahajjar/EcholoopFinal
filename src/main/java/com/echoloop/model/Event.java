@@ -51,6 +51,14 @@ public class Event {
         inverseJoinColumns = @JoinColumn(name = "dj_id")
     )
     private Set<User> applicants = new HashSet<>();
+
+    @ManyToMany
+    @JoinTable(
+        name = "event_rejected_applications",
+        joinColumns = @JoinColumn(name = "event_id"),
+        inverseJoinColumns = @JoinColumn(name = "dj_id")
+    )
+    private Set<User> rejectedApplicants = new HashSet<>();
     private String imageUrl;
 
 
@@ -95,6 +103,9 @@ public class Event {
 
     public Set<User> getApplicants() { return applicants; }
     public void setApplicants(Set<User> applicants) { this.applicants = applicants; }
+
+    public Set<User> getRejectedApplicants() { return rejectedApplicants; }
+    public void setRejectedApplicants(Set<User> rejectedApplicants) { this.rejectedApplicants = rejectedApplicants; }
 
     
 }

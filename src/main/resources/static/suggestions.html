@@ -336,6 +336,68 @@ body {
   }
 }
 
+#performedEventsContainer,
+#networkEventsContainer {
+  margin-bottom: 2rem;
+  padding: 1rem;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+}
+
+#performedEventsContainer:last-child,
+#networkEventsContainer:last-child {
+  margin-bottom: 0;
+}
+
+#performedEventsContainer h3,
+#networkEventsContainer h3 {
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid var(--border);
+  font-size: 1.2em;
+}
+
+.feed-event-card {
+  background: var(--surface);
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+  border-radius: 12px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.feed-event-card:last-child {
+  margin-bottom: 0;
+}
+
+.feed-event-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.feed-event-card h4 {
+  margin: 0 0 1rem 0;
+  font-size: 1.1em;
+}
+
+.feed-event-card p {
+  margin: 0.5rem 0;
+  color: var(--text-secondary);
+}
+
+.feed-event-card a {
+  color: var(--accent-primary);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.feed-event-card a:hover {
+  color: var(--accent-secondary);
+  text-decoration: none;
+}
+
   </style>
 </head>
 <body>
@@ -406,13 +468,36 @@ body {
 
       // Fetch event suggestions if user is a DJ
       if (role === "dj") {
-        fetch(`/api/events/${userId}/suggestions/performed`)
-          .then(res => res.json())
-          .then(data => renderSuggestions(data, "Events Based on What You've Performed"));
+        // Create a section for event suggestions
+        const eventSuggestionsSection = document.createElement("section");
+        eventSuggestionsSection.className = "feed-suggestions-box";
+        
+        const performedContainer = document.createElement("div");
+        performedContainer.id = "performedEventsContainer";
+        
+        const networkContainer = document.createElement("div");
+        networkContainer.id = "networkEventsContainer";
+        
+        // Add containers to the suggestions section
+        eventSuggestionsSection.appendChild(performedContainer);
+        eventSuggestionsSection.appendChild(networkContainer);
+        
+        // Add the section to the suggestions wrapper
+        document.querySelector(".feed-suggestions-wrapper").appendChild(eventSuggestionsSection);
 
-        fetch(`/api/events/${userId}/suggestions/foaf`)
-          .then(res => res.json())
-          .then(data => renderSuggestions(data, "Events Your Network Performed or Liked"));
+        Promise.all([
+          fetch(`/api/events/${userId}/suggestions/performed`).then(res => res.json()),
+          fetch(`/api/events/${userId}/suggestions/foaf`).then(res => res.json())
+        ])
+        .then(([performedData, networkData]) => {
+          renderSuggestions(performedData, "Events Based on What You've Performed", "performedEventsContainer");
+          renderSuggestions(networkData, "Events Your Network Performed or Liked", "networkEventsContainer");
+        })
+        .catch(error => {
+          console.error("Error fetching event suggestions:", error);
+          performedContainer.innerHTML = "<p>Error loading event suggestions. Please try again later.</p>";
+          networkContainer.innerHTML = "<p>Error loading event suggestions. Please try again later.</p>";
+        });
       }
     });
 
@@ -464,38 +549,34 @@ body {
       });
     }
 
-    function renderSuggestions(events, title) {
-      const wrapper = document.createElement("div");
-      wrapper.className = "feed-suggestions-box";
+    function renderSuggestions(data, title, containerId) {
+      const container = document.getElementById(containerId);
+      container.innerHTML = `<h3>${title}</h3>`;
 
-      const heading = document.createElement("h3");
-      heading.textContent = title;
-
-      const container = document.createElement("div");
-      container.className = "feed-event-row";
-
-      if (!events.length) {
-        container.innerHTML = "<p>No suggestions found.</p>";
-      } else {
-        events.forEach(event => {
-          const card = document.createElement("div");
-          card.className = "feed-event-card";
-
-          card.innerHTML = `
-            <h4>${event.title}</h4>
-            <p>${event.eventDate}<br>${event.location}</p>
-            <p><strong>Event Community:</strong> <a href="community_profile.html?id=${event.communityId}">${event.communityName}</a></p>
-            <button class="feed-button" onclick="window.location.href='event_detail.html?eventId=${event.id}'">View Event</button>
-            <button class="feed-button" onclick="markInterest(${event.id}, this)">I'm Interested</button>
-          `;
-
-          container.appendChild(card);
-        });
+      if (!data.length) {
+        container.innerHTML += "<p>No suggestions available yet.</p>";
+        return;
       }
 
-      wrapper.appendChild(heading);
-      wrapper.appendChild(container);
-      document.querySelector(".feed-suggestions-wrapper").appendChild(wrapper);
+      data.forEach(event => {
+        const eventDate = new Date(event.eventDate).toLocaleDateString('en-US', {
+          weekday: 'long',
+          month: 'long',
+          day: 'numeric',
+          year: 'numeric'
+        });
+
+        const card = document.createElement("div");
+        card.className = "feed-event-card";
+        card.innerHTML = `
+          <h4><a href="event_detail.html?eventId=${event.id}">${event.title}</a></h4>
+          <p><strong>Genre:</strong> ${event.genre}</p>
+          <p><strong>Location:</strong> ${event.location}</p>
+          <p><strong>Event Date:</strong> ${eventDate}</p>
+          <p><strong>Event Community:</strong> <a href="community_profile.html?id=${event.communityId}">${event.communityName}</a></p>
+        `;
+        container.appendChild(card);
+      });
     }
 
     function markInterest(eventId, button) {

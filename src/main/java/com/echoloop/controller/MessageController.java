@@ -65,4 +65,12 @@ public class MessageController {
         messageService.markAllMessagesAsRead(userId);
         return ResponseEntity.ok().build();
     }
+
+    @PostMapping("/mark-read/{otherUserId}")
+    public ResponseEntity<?> markConversationAsRead(
+            @RequestHeader("User-Id") Long userId,
+            @PathVariable Long otherUserId) {
+        messageService.markConversationAsRead(userId, otherUserId);
+        return ResponseEntity.ok().build();
+    }
 } 

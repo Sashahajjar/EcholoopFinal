@@ -253,9 +253,9 @@ public class EventController {
             Event event = eventRepository.findById(eventId).orElseThrow();
             user.getInterestedEvents().remove(event);
             userRepository.save(user);
-            return ResponseEntity.ok().build();
+    return ResponseEntity.ok().build();
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Error removing interest: " + e.getMessage());
         }
-    }
+}
 }

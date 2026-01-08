@@ -156,7 +156,13 @@ function searchAll(query) {
 
 // ✅ Apply to Event
 function applyToEvent(eventId, button) {
-  if (!loggedInUser || loggedInUser.role.toLowerCase() !== "dj") {
+  const loggedInUser = JSON.parse(localStorage.getItem("echoloopUser"));
+  if (!loggedInUser) {
+    alert("You must be logged in to apply.");
+    return;
+  }
+
+  if (loggedInUser.role?.toLowerCase() !== "dj") {
     alert("Only DJs can apply to events.");
     return;
   }
@@ -166,9 +172,19 @@ function applyToEvent(eventId, button) {
   })
     .then(res => {
       if (res.ok) {
-        button.textContent = "Applied";
-        button.disabled = true;
-        button.classList.add("applied");
+        // If button was passed, update it
+        if (button) {
+          button.textContent = "Applied";
+          button.disabled = true;
+          button.classList.add("applied");
+        } else {
+          // If no button was passed, find and update the apply button on the page
+          const applyBtn = document.getElementById("applyBtn");
+          if (applyBtn) {
+            applyBtn.textContent = "Applied";
+            applyBtn.disabled = true;
+          }
+        }
       } else {
         alert("Application failed or already applied.");
       }

@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: echoloop-backend
+    env: java
+    buildCommand: mvn clean install -DskipTests
+    startCommand: java -jar target/echoloop-backend-0.0.1-SNAPSHOT.jar
+    envVars:
+      - key: SPRING_DATASOURCE_URL
+        sync: false
+      - key: SPRING_DATASOURCE_USERNAME
+        value: postgres
+      - key: SPRING_DATASOURCE_PASSWORD
+        sync: false
+      - key: SPRING_JPA_HIBERNATE_DDL_AUTO
+        value: update
+      - key: PORT
+        value: 8080
+

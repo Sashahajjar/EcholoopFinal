@@ -42,10 +42,10 @@ function injectNavbar() {
            <a href="account_community.html" data-page="account_community">Management</a>
            <a href="my_profile.html" data-page="my_profile">Account</a>`
         : `<a href="feed.html" data-page="feed">Feed</a>
-           <a href="suggestions.html" data-page="suggestions">Suggestions</a>
-           <a href="create_post.html" data-page="create_post">Create Post</a>
+                <a href="suggestions.html" data-page="suggestions">Suggestions</a>
+                <a href="create_post.html" data-page="create_post">Create Post</a>
            <a href="opportunities.html" data-page="opportunities">Opportunities</a>
-           <a href="messages.html" data-page="messages">Messages</a>
+                <a href="messages.html" data-page="messages">Messages</a>
            <a href="my_applications.html" data-page="my_applications">My Applications</a>
            <a href="my_profile.html" data-page="my_profile">Account</a>`;
     
@@ -54,15 +54,15 @@ function injectNavbar() {
     const isManagementPage = currentPage === 'account_community.html';
 
     const notificationBell = !isManagementPage ? `
-        <div class="notification-wrapper">
-            <button id="notification-bell" class="notification-bell" title="Notifications">
-                <i class="fas fa-bell"></i>
-                <span id="notification-count" class="notification-count">0</span>
-            </button>
-            <div id="notification-dropdown" class="notification-dropdown">
-                <div id="notification-list" class="notification-list"></div>
-            </div>
-        </div>
+                <div class="notification-wrapper">
+                    <button id="notification-bell" class="notification-bell" title="Notifications">
+                        <i class="fas fa-bell"></i>
+                        <span id="notification-count" class="notification-count">0</span>
+                    </button>
+                    <div id="notification-dropdown" class="notification-dropdown">
+                        <div id="notification-list" class="notification-list"></div>
+                    </div>
+                </div>
     ` : '';
     
     const navbarHTML = `
@@ -87,7 +87,7 @@ function injectNavbar() {
     const navLinksContainer = document.querySelector('.feed-nav-links');
     const navLinks = document.querySelectorAll('.feed-nav-links a[data-page]');
     const mobileMenuBtn = document.querySelector('.mobile-menu-button');
-
+    
     // Update active state for current page
     navLinks.forEach(link => {
         if (link.getAttribute('data-page') === currentPage.split('.')[0]) {

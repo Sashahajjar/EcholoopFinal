@@ -142,6 +142,17 @@ public class MessageService {
         messageRepository.saveAll(unreadMessages);
     }
 
+    @Transactional
+    public void markConversationAsRead(Long userId, Long otherUserId) {
+        // Get all unread messages where the current user is the recipient and the other user is the sender
+        List<Message> unreadMessages = messageRepository.findByRecipientIdAndSenderIdAndReadAtIsNull(userId, otherUserId);
+        
+        // Mark all messages as read
+        LocalDateTime now = LocalDateTime.now();
+        unreadMessages.forEach(message -> message.setReadAt(now));
+        messageRepository.saveAll(unreadMessages);
+    }
+
     private MessageResponse convertToResponse(Message message) {
         MessageResponse response = new MessageResponse();
         response.setId(message.getId());

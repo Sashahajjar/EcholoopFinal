@@ -6,6 +6,7 @@ if (!currentUserId) {
 }
 
 let activeConversationUserId = null;
+let activeConversationUsername = null;
 let messagePollingInterval = null;
 let allConversations = []; // Store all conversations for filtering
 
@@ -107,14 +108,22 @@ async function selectConversation(userId, username) {
     const conversationItem = document.querySelector(`.conversation-item[data-user-id="${userId}"]`);
     if (conversationItem) {
         conversationItem.classList.add('active');
-        // If username wasn't provided, try to get it from the conversation item
+        // If username wasn't provided, get it from the conversation item
         if (!username) {
-            username = conversationItem.querySelector('.conversation-header span:last-child').textContent;
+            const usernameElement = conversationItem.querySelector('.conversation-header span:last-child');
+            username = usernameElement ? usernameElement.textContent : 'Unknown User';
+        }
+        
+        // Remove unread badge from the conversation
+        const unreadBadge = conversationItem.querySelector('.unread-badge');
+        if (unreadBadge) {
+            unreadBadge.remove();
         }
     }
 
     activeConversationUserId = userId;
-    chatHeader.innerHTML = `<h2>Chat with ${username}</h2>`;
+    activeConversationUsername = username;
+    chatHeader.innerHTML = `<h2>Chat with ${activeConversationUsername}</h2>`;
     
     // Show chat content and hide empty state
     emptyState.style.display = 'none';
@@ -122,6 +131,38 @@ async function selectConversation(userId, username) {
     const chatInput = document.getElementById('chatInput');
     if (chatInput) {
         chatInput.style.display = 'block';
+    }
+
+    // Mark messages as read for this conversation
+    try {
+        const response = await fetch(`/api/messages/mark-read/${userId}`, {
+            method: 'POST',
+            headers: {
+                'User-Id': currentUserId
+            }
+        });
+        
+        if (!response.ok) throw new Error('Failed to mark messages as read');
+        
+        // Update the conversation in allConversations to show no unread messages
+        const conversationIndex = allConversations.findIndex(conv => conv.userId === userId);
+        if (conversationIndex !== -1) {
+            allConversations[conversationIndex].unreadCount = 0;
+        }
+        
+        // Update the notification badge in the navbar
+        const badge = document.getElementById('messageNotificationBadge');
+        if (badge) {
+            // Get total unread count from all conversations
+            const totalUnread = allConversations.reduce((sum, conv) => sum + (conv.unreadCount || 0), 0);
+            if (totalUnread === 0) {
+                badge.style.display = 'none';
+            } else {
+                badge.textContent = totalUnread;
+            }
+        }
+    } catch (error) {
+        console.error('Error marking messages as read:', error);
     }
 
     await loadConversationMessages(userId);
@@ -135,7 +176,8 @@ async function startNewConversation(userId, username) {
     }
 
     activeConversationUserId = userId;
-    chatHeader.innerHTML = `<h2>Chat with ${username}</h2>`;
+    activeConversationUsername = username;
+    chatHeader.innerHTML = `<h2>Chat with ${activeConversationUsername}</h2>`;
     chatMessages.innerHTML = '';
     
     // Show chat content, input, and hide empty state
@@ -149,17 +191,24 @@ async function startNewConversation(userId, username) {
     // Add the new conversation to the list if it doesn't exist
     const existingConversation = document.querySelector(`.conversation-item[data-user-id="${userId}"]`);
     if (!existingConversation) {
-        const newConversationHtml = `
-            <div class="conversation-item active" data-user-id="${userId}" onclick="selectConversation('${userId}', '${username}')">
-                <div class="conversation-header">
-                    <span class="user-status offline"></span>
-                    <span>${username}</span>
-                </div>
-                <div class="last-message"></div>
-                <div class="last-message-time"></div>
-            </div>
-        `;
-        conversationsContent.insertAdjacentHTML('afterbegin', newConversationHtml);
+        // Add to allConversations array to maintain state
+        allConversations.unshift({
+            userId: userId,
+            username: username,
+            lastMessage: 'No messages yet',
+            lastMessageTime: new Date().toISOString(),
+            unreadCount: 0,
+            online: false
+        });
+        
+        // Update the conversations display
+        displayConversations(allConversations);
+        
+        // Add active class to the new conversation
+        const newConversation = document.querySelector(`.conversation-item[data-user-id="${userId}"]`);
+        if (newConversation) {
+            newConversation.classList.add('active');
+        }
     } else {
         selectConversation(userId, username);
     }
@@ -188,9 +237,10 @@ async function loadConversations() {
         
         displayConversations(allConversations);
         
-        // If there's an active conversation, reselect it
+        // If there's an active conversation, reselect it with the stored username
         if (activeConversationUserId) {
-            selectConversation(activeConversationUserId);
+            const activeConv = allConversations.find(conv => conv.userId === activeConversationUserId);
+            selectConversation(activeConversationUserId, activeConv ? activeConv.username : activeConversationUsername);
         }
     } catch (error) {
         console.error('Error loading conversations:', error);

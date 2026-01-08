@@ -282,42 +282,42 @@
 
     select:invalid {
       color: var(--text-secondary);
-    }
-
-    select option {
+	}
+	
+	select option {
       color: var(--text-primary);
-    }
-
-    select option:disabled {
+	}
+	
+	select option:disabled {
       color: var(--text-secondary);
-    }
-
+	}
+	
     input::placeholder {
       color: var(--text-secondary);
       opacity: 1;
-    }
-
-    #signupError {
+	}
+	
+		#signupError {
       color: #e53e3e;
       font-weight: 500;
       margin-bottom: 16px;
-      display: none;
-      font-size: 0.95em;
+	  display: none;
+	  font-size: 0.95em;
       background: #fff5f5;
       padding: 12px;
       border-radius: 8px;
       border: 1px solid #feb2b2;
-    }
-
-    .field-error {
+	}
+	
+	.field-error {
       color: #e53e3e;
-      font-size: 0.85em;
-      margin-top: 4px;
+  font-size: 0.85em;
+  margin-top: 4px;
       margin-bottom: 4px;
-      text-align: left;
-      display: none;
-    }
-
+  text-align: left;
+  display: none;
+}
+	
     /* Extra Small Devices (phones) */
     @media (max-width: 480px) {
       .feed-landing-logo {
@@ -417,11 +417,11 @@
 <body>
   <div class="content-wrapper">
     <img src="images/transparentlogo.png" alt="EchoLoop Logo" class="feed-landing-logo" />
-    <h2>Connecting DJs and events</h2>
+  <h2>Connecting DJs and events</h2>
 
-    <div class="feed-auth-buttons">
-      <button class="feed-button-purple" onclick="openModal('loginModal')">Log in</button>
-      <button class="feed-button-yellow" onclick="openModal('signupModal')">Sign up</button>
+  <div class="feed-auth-buttons">
+    <button class="feed-button-purple" onclick="openModal('loginModal')">Log in</button>
+    <button class="feed-button-yellow" onclick="openModal('signupModal')">Sign up</button>
     </div>
   </div>
 
@@ -444,17 +444,17 @@
       <h3>Sign Up</h3>
       <div id="signupError"></div>
       <div id="signupUsernameError" class="field-error"></div>
-      <input type="text" id="signupUsername" placeholder="Username" />
-      
-      <div id="signupPasswordError" class="field-error"></div>
-      <input type="password" id="signupPassword" placeholder="Password" />
-      
-      <div id="signupRoleError" class="field-error"></div>
-      <select id="signupRole" required>
-        <option value="" disabled selected>You are...</option>
-        <option value="DJ">DJ</option>
-        <option value="Event Community">Event Community</option>
-      </select>
+	<input type="text" id="signupUsername" placeholder="Username" />
+	
+	<div id="signupPasswordError" class="field-error"></div>
+	<input type="password" id="signupPassword" placeholder="Password" />
+	
+	<div id="signupRoleError" class="field-error"></div>
+	<select id="signupRole" required>
+	  <option value="" disabled selected>You are...</option>
+	  <option value="DJ">DJ</option>
+	  <option value="Event Community">Event Community</option>
+	</select>
 
       <button onclick="signup()">Sign up</button>
     </div>
@@ -542,15 +542,21 @@
     	  fetch("http://localhost:8080/api/users/signup", {
     	    method: "POST",
     	    headers: { "Content-Type": "application/json" },
-    	    body: JSON.stringify({ username, password, role })
+        body: JSON.stringify({ username, password, role })
     	  })
     	  .then(response => {
     	    if (!response.ok) throw new Error("Signup failed");
     	    alert("Signup successful. You can now log in.");
     	    closeModal('signupModal');
+        // Clear form fields
+        document.getElementById("signupUsername").value = '';
+        document.getElementById("signupPassword").value = '';
+        document.getElementById("signupRole").value = '';
+        // Refresh the page to clear any previous state
+        window.location.reload();
     	  })
     	  .catch(err => {
-    	    alert(err.message);
+        alert(err.message);
     	  });
     	}
 

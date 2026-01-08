@@ -33,7 +33,7 @@ public class User {
 
     @Column(columnDefinition = "TEXT")
     private String about;
-
+   
     private String profilePicture;
    
 

@@ -13,4 +13,7 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
     List<Message> findByRecipientAndReadAtIsNullOrderBySentAtAsc(User recipient);
     List<Message> findByRecipientOrSenderOrderBySentAtDesc(User recipient, User sender);
     int countByRecipientAndReadAtIsNull(User recipient);
+    
+    // Add method to find unread messages between two users
+    List<Message> findByRecipientIdAndSenderIdAndReadAtIsNull(Long recipientId, Long senderId);
 } 

@@ -33,14 +33,33 @@
       border-radius: 50%;
       object-fit: cover;
       border: 3px solid var(--accent-secondary);
-      margin-bottom: 16px;
+      flex-shrink: 0;
     }
 
     .feed-profile-header {
       display: flex;
-      justify-content: space-between;
       align-items: center;
+      gap: 24px;
       margin-bottom: 24px;
+    }
+
+    .feed-profile-header > div {
+      flex: 1;
+    }
+
+    .feed-profile-header h2 {
+      margin: 0 0 8px 0;
+      font-size: 1.5em;
+      color: var(--text-primary);
+    }
+
+    .feed-profile-header p {
+      margin: 0;
+      color: var(--text-secondary);
+    }
+
+    .feed-profile-actions {
+      flex-shrink: 0;
     }
 
     .feed-profile-section {
@@ -166,6 +185,56 @@
         background-color: transparent;
       }
     }
+
+    .feed-profile-avatar-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .feed-profile-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      width: 100%;
+      max-width: 200px;
+    }
+
+    .feed-profile-buttons .feed-button {
+      width: 100%;
+      text-align: center;
+      font-size: 0.9em;
+    }
+
+    @media (max-width: 768px) {
+      .feed-profile-header {
+        flex-direction: column;
+        text-align: center;
+      }
+
+      .feed-profile-img {
+        margin: 0 auto 16px;
+      }
+
+      .feed-profile-actions {
+        margin-top: 16px;
+      }
+
+      .feed-profile-avatar-section {
+        margin-bottom: 16px;
+      }
+
+      .feed-profile-buttons {
+        flex-direction: row;
+        max-width: none;
+      }
+
+      .feed-profile-buttons .feed-button {
+        flex: 1;
+      }
+    }
   </style>
 </head>
 <body>
@@ -180,34 +249,30 @@
 
   <main class="feed-account-container">
     <div class="feed-profile-card">
-      <img src="images/img1.jpg" alt="Planner" class="feed-profile-img" />
-      <button id="followBtn" class="feed-button" style="display: none;"></button>
-
-      <div class="feed-profile-details">
-        <div class="feed-profile-header">
-          <div>
-            <h2 id="usernameDisplay">Loading...</h2>
-            <p id="roleDisplay">Loading role...</p>
-          </div>
-          <div class="feed-profile-actions">
-            <button id="logoutBtn" class="feed-button">Log out</button>
-          </div>
+      <div class="feed-profile-header">
+        <img id="profileImage" src="images/venue-profile.jpg" alt="Profile" class="feed-profile-img" />
+        <div>
+          <h2 id="usernameDisplay">Loading...</h2>
+          <p id="roleDisplay">Loading role...</p>
         </div>
-
-        <div class="feed-profile-section">
-          <h4>Upcoming Events</h4>
-          <div id="eventsList">Loading...</div>
+        <div class="feed-profile-actions">
+          <button id="logoutBtn" class="feed-button">Log out</button>
         </div>
+      </div>
 
-        <div class="feed-profile-section">
-          <h4>DJ Applications</h4>
-          <div id="applicationsSection">Loading applications...</div>
-        </div>
+      <div class="feed-profile-section">
+        <h4>Upcoming Events</h4>
+        <div id="eventsList">Loading...</div>
+      </div>
 
-        <div class="feed-profile-section">
-          <h4>Performing DJs</h4>
-          <div id="performingDjsSection">Loading...</div>
-        </div>
+      <div class="feed-profile-section">
+        <h4>DJ Applications</h4>
+        <div id="applicationsSection">Loading applications...</div>
+      </div>
+
+      <div class="feed-profile-section">
+        <h4>Performing DJs</h4>
+        <div id="performingDjsSection">Loading...</div>
       </div>
     </div>
   </main>
@@ -234,6 +299,21 @@
 
       document.getElementById("usernameDisplay").textContent = loggedInUser.username;
       document.getElementById("roleDisplay").textContent = loggedInUser.role;
+
+      // Load user profile including profile picture
+      fetch(`/api/users/${userIdToFetch}/profile`)
+        .then(res => res.json())
+        .then(user => {
+          // Update profile picture if one exists
+          if (user.profilePicture) {
+            document.getElementById('profileImage').src = user.profilePicture;
+          } else {
+            document.getElementById('profileImage').src = 'images/venue-profile.jpg';
+          }
+        })
+        .catch(error => {
+          console.error('Error loading profile:', error);
+        });
 
       fetch(`/api/events/by-user/${userIdToFetch}`)
         .then(res => res.json())

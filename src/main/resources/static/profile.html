@@ -347,7 +347,7 @@
       <div class="feed-profile-section" id="djProfileSections" style="display: none;">
         <h4>Location</h4>
         <div id="locationSection">
-          <p id="djLocation">Loading...</p>
+        <p id="djLocation">Loading...</p>
         </div>
         <div id="locationEditSection" style="display: none;">
           <input type="text" id="locationInput" class="feed-input" />
@@ -355,7 +355,7 @@
 
         <h4>Experience</h4>
         <div id="experienceSection">
-          <p id="djExperience">Loading...</p>
+        <p id="djExperience">Loading...</p>
         </div>
         <div id="experienceEditSection" style="display: none;">
           <textarea id="experienceInput" class="feed-textarea"></textarea>
@@ -363,7 +363,7 @@
 
         <h4>Skills</h4>
         <div id="skillsSection">
-          <p id="djSkills">Loading...</p>
+        <p id="djSkills">Loading...</p>
         </div>
         <div id="skillsEditSection" style="display: none;">
           <textarea id="skillsInput" class="feed-textarea"></textarea>
@@ -371,7 +371,7 @@
 
         <h4>Genres</h4>
         <div id="genresSection">
-          <p id="djGenres">Loading...</p>
+        <p id="djGenres">Loading...</p>
         </div>
         <div id="genresEditSection" style="display: none;">
           <input type="text" id="genresInput" class="feed-input" />
@@ -574,8 +574,8 @@
         // Show edit actions and hide edit button
         document.getElementById('editActions').style.display = 'flex';
         document.getElementById('editBtn').style.display = 'none';
-      }
-
+        }
+  
       function cancelEdit() {
         // Restore original values
         document.getElementById('djLocation').innerText = window.originalLocation || '—';
@@ -598,7 +598,7 @@
         document.getElementById('editActions').style.display = 'none';
         document.getElementById('editBtn').style.display = 'inline-block';
       }
-
+  
       function saveProfileEdits() {
         console.log("Save profile edits called"); // Debug log
         const updatedUser = {
@@ -607,14 +607,14 @@
           skills: document.getElementById('skillsInput').value,
           genres: document.getElementById('genresInput').value
         };
-
+  
         fetch(`/api/users/${loggedInUser.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(updatedUser)
         })
-        .then(res => {
-          if (res.ok) {
+          .then(res => {
+            if (res.ok) {
             // Update display values
             document.getElementById('djLocation').innerText = updatedUser.locations || '—';
             document.getElementById('djExperience').innerText = updatedUser.experience || '—';
@@ -630,11 +630,11 @@
             // Return to display mode
             cancelEdit();
             alert('Profile updated successfully!');
-          } else {
+            } else {
             alert('Failed to update profile.');
-          }
-        })
-        .catch(err => {
+            }
+          })
+          .catch(err => {
           console.error('Update error:', err);
           alert('An error occurred while updating the profile.');
         });
